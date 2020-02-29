@@ -1,0 +1,20 @@
+[package]
+name = 'weather'
+version = '0.1.0-dev'
+authors = ['Antoine Gourlay <antoine@gourlay.fr>']
+edition = '2018'
+
+[dependencies]
+ansi_term = "0.12"
+
+[dependencies.serde]
+version = '1'
+features = ['derive']
+
+[dependencies.reqwest]
+version = '0.10'
+features = ['json']
+
+[dependencies.tokio]
+version = '0.2'
+features = ['full']
