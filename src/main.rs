@@ -1,5 +1,6 @@
 use chrono::{FixedOffset, TimeZone, Utc};
 use std::io::Write;
+use structopt::StructOpt;
 use termcolor::*;
 
 const API_URL: &str = "https://api.openweathermap.org/data/2.5/weather?units=metric";
@@ -17,17 +18,28 @@ const WIND_DIR_ICONS: &str =
     "\u{e35a}\u{e359}\u{e35b}\u{e356}\u{e357}\u{e355}\u{e354}\u{e358}\u{e35a}";
 const HUMIDITY_COLORS: [u8; 11] = [220, 226, 190, 118, 82, 46, 48, 50, 51, 45, 39];
 
+#[derive(StructOpt, Debug)]
+#[structopt(about = "Display the current weather using the Openweather API.")]
+struct ProgramOptions {
+    #[structopt(short, long)]
+    key: String,
+
+    #[structopt(short, long)]
+    location: String,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let key = std::env::args().nth(1).unwrap();
-    
+    let options = ProgramOptions::from_args();
+
+    let (lat, lon) = {
+        let mut s = options.location.split(',');
+        (s.next().expect("Missing latitude"), s.next().expect("Missing longitude"))
+    };
+
     let resp = reqwest::Client::new()
         .get(API_URL)
-        .query(&[
-            ("lat", "52.35"),
-            ("lon", "4.833"),
-            ("appid", &key),
-        ])
+        .query(&[("lat", lat), ("lon", lon), ("appid", &options.key)])
         .send()
         .await?
         .json::<WeatherResponse>()
@@ -204,10 +216,7 @@ fn display_humidity(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let hum_idx = (humidity / 10) as usize;
     write!(stdout, "  \u{e373} ")?;
-    stdout.set_color(
-        style
-            .set_fg(Some(Color::Ansi256(HUMIDITY_COLORS[hum_idx]))),
-    )?;
+    stdout.set_color(style.set_fg(Some(Color::Ansi256(HUMIDITY_COLORS[hum_idx]))))?;
     write!(stdout, "{}", humidity)?;
     stdout.set_color(style.set_fg(None))?;
     write!(stdout, " %")?;
