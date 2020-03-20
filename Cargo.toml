@@ -5,7 +5,8 @@ authors = ['Antoine Gourlay <antoine@gourlay.fr>']
 edition = '2018'
 
 [dependencies]
-ansi_term = "0.12"
+chrono = "0.4"
+termcolor = "1.1"
 
 [dependencies.serde]
 version = '1'
