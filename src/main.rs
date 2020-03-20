@@ -2,8 +2,8 @@ use chrono::{FixedOffset, TimeZone, Utc};
 use std::io::Write;
 use structopt::StructOpt;
 use termcolor::*;
+use weather::{response::*, Location, WeatherClient};
 
-const API_URL: &str = "https://api.openweathermap.org/data/2.5/weather?units=metric";
 const TEMP_COLORS: [u8; 57] = [
     57, 63, 63, 63, 27, 27, 27, 33, 33, 33, 39, 39, 39, 45, 45, 45, 51, 51, 50, 50, 49, 49, 48, 48,
     47, 47, 46, 46, 46, 82, 82, 82, 118, 118, 118, 154, 154, 154, 190, 190, 190, 226, 226, 226,
@@ -24,48 +24,16 @@ struct ProgramOptions {
     #[structopt(short, long)]
     key: String,
 
-    #[structopt(short, long, parse(from_str = parse_location))]
+    #[structopt(short, long, parse(from_str = Location::new))]
     location: Location,
-}
-
-#[derive(Debug)]
-enum Location {
-    LatLon(f64, f64),
-    Place(String),
-}
-
-fn parse_location(s: &str) -> Location {
-    let sp: Vec<_> = s.split(',').collect();
-    if sp.len() == 2 {
-        if let (Ok(lat), Ok(lon)) = (sp[0].parse(), sp[1].parse()) {
-            return Location::LatLon(lat, lon)
-        }
-    }
-
-    Location::Place(s.to_owned())
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = ProgramOptions::from_args();
 
-    let mut params = Vec::with_capacity(3);
-    match options.location {
-        Location::LatLon(lat, lon) => {
-            params.push(("lat", lat.to_string()));
-            params.push(("lon", lon.to_string()));
-        }
-        Location::Place(place) => params.push(("q", place))
-    };
-
-    params.push(("appid", options.key));
-
-    let resp = reqwest::Client::new()
-        .get(API_URL)
-        .query(&params)
-        .send()
-        .await?
-        .json::<WeatherResponse>()
+    let resp = WeatherClient::new()
+        .query(options.location, options.key)
         .await?;
 
     let wind_type = resp
@@ -75,6 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut stdout = StandardStream::stdout(ColorChoice::Auto);
     let mut style = ColorSpec::new();
+
     style.set_bg(Some(Color::Rgb(15, 55, 84)));
 
     stdout.set_color(&style)?;
@@ -289,80 +258,4 @@ fn display_temp(
     stdout.set_color(style.set_fg(None).set_bold(false))?;
     write!(stdout, " °C")?;
     Ok(())
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct WeatherResponse {
-    coord: Coord,
-    weather: Vec<Weather>,
-    main: Main,
-    visibility: u16,
-    wind: Option<Wind>,
-    rain: Option<Rain>,
-    snow: Option<Snow>,
-    clouds: Option<Clouds>,
-    dt: i64,
-    sys: Sys,
-    timezone: i32,
-    id: u32,
-    name: String,
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct Coord {
-    lat: f32,
-    lon: f32,
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct Weather {
-    id: u16,
-    main: String,
-    description: String,
-    icon: String,
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct Main {
-    temp: f32,
-    feels_like: f32,
-    temp_min: f32,
-    temp_max: f32,
-    pressure: u16,
-    humidity: u8,
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct Wind {
-    speed: f32,
-    deg: Option<f32>,
-    gale: Option<f32>,
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct Rain {
-    #[serde(rename(deserialize = "1h"))]
-    one_h: Option<f32>,
-    #[serde(rename(deserialize = "3h"))]
-    three_h: Option<f32>,
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct Snow {
-    #[serde(rename(deserialize = "1h"))]
-    one_h: Option<f32>,
-    #[serde(rename(deserialize = "3h"))]
-    three_h: Option<f32>,
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct Clouds {
-    all: u16,
-}
-
-#[derive(serde::Deserialize, Debug)]
-struct Sys {
-    country: String,
-    sunrise: i64,
-    sunset: i64,
 }
