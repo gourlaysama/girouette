@@ -24,22 +24,45 @@ struct ProgramOptions {
     #[structopt(short, long)]
     key: String,
 
-    #[structopt(short, long)]
-    location: String,
+    #[structopt(short, long, parse(from_str = parse_location))]
+    location: Location,
+}
+
+#[derive(Debug)]
+enum Location {
+    LatLon(f64, f64),
+    Place(String),
+}
+
+fn parse_location(s: &str) -> Location {
+    let sp: Vec<_> = s.split(',').collect();
+    if sp.len() == 2 {
+        if let (Ok(lat), Ok(lon)) = (sp[0].parse(), sp[1].parse()) {
+            return Location::LatLon(lat, lon)
+        }
+    }
+
+    Location::Place(s.to_owned())
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = ProgramOptions::from_args();
 
-    let (lat, lon) = {
-        let mut s = options.location.split(',');
-        (s.next().expect("Missing latitude"), s.next().expect("Missing longitude"))
+    let mut params = Vec::with_capacity(3);
+    match options.location {
+        Location::LatLon(lat, lon) => {
+            params.push(("lat", lat.to_string()));
+            params.push(("lon", lon.to_string()));
+        }
+        Location::Place(place) => params.push(("q", place))
     };
+
+    params.push(("appid", options.key));
 
     let resp = reqwest::Client::new()
         .get(API_URL)
-        .query(&[("lat", lat), ("lon", lon), ("appid", &options.key)])
+        .query(&params)
         .send()
         .await?
         .json::<WeatherResponse>()
