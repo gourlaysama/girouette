@@ -1,4 +1,5 @@
 pub mod response;
+pub mod segments;
 
 const API_URL: &str = "https://api.openweathermap.org/data/2.5/weather?units=metric";
 
@@ -8,6 +9,12 @@ use response::WeatherResponse;
 pub enum Location {
     LatLon(f64, f64),
     Place(String),
+}
+
+pub enum WindType {
+    Low,
+    Mid,
+    High,
 }
 
 impl Location {
@@ -60,4 +67,10 @@ impl WeatherClient {
             .await
             .map_err(|e| e.into())
     }
+}
+
+pub enum DisplayMode {
+    NerdFont,
+    Unicode,
+    Ascii,
 }
