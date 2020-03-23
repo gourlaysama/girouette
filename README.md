@@ -15,11 +15,11 @@ Rust 1.42 or newer.
 Build the latest release (0.0.0-dummy) from source with:
 
 ```sh
-$ git clone https://github.com/gourlaysama/weather -b v0.0.0-dummy
+$ git clone https://github.com/gourlaysama/weather -b v0.0.0-dev
 $ cd weather
 $ cargo build --release
 $ ./target/release/weather --version
-0.0.0-dummy
+weather 0.0.0-dev
 ```
 
 #### License
