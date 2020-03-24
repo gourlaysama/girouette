@@ -1,14 +1,38 @@
+pub mod config;
 pub mod response;
 pub mod segments;
 
+use response::WeatherResponse;
+use serde::{Deserialize, Serialize};
+
 const API_URL: &str = "https://api.openweathermap.org/data/2.5/weather?units=metric";
 
-use response::WeatherResponse;
-
-#[derive(Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(from = "String", into = "String")]
 pub enum Location {
     LatLon(f64, f64),
     Place(String),
+}
+
+impl From<String> for Location {
+    fn from(s: String) -> Self {
+        Location::new(&s)
+    }
+}
+
+impl From<Location> for String {
+    fn from(loc: Location) -> Self {
+        format!("{}", loc)
+    }
+}
+
+impl std::fmt::Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Location::LatLon(lat, lon) => write!(f, "{}, {}", lat, lon),
+            Location::Place(place) => write!(f, "{}", place),
+        }
+    }
 }
 
 pub enum WindType {
@@ -69,8 +93,10 @@ impl WeatherClient {
     }
 }
 
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum DisplayMode {
-    NerdFont,
+    NerdFonts,
     Unicode,
     Ascii,
 }

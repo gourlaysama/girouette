@@ -9,6 +9,10 @@ chrono = "0.4"
 termcolor = "1.1"
 structopt = "0.3"
 
+[dependencies.config]
+version = "0.9"
+features = ["yaml"]
+
 [dependencies.serde]
 version = '1'
 features = ['derive']

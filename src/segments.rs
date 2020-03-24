@@ -1,21 +1,21 @@
+use crate::config::*;
 use crate::{response::Wind, DisplayMode, WeatherResponse, WindType};
 use chrono::{FixedOffset, TimeZone, Utc};
+use serde::{Deserialize, Serialize};
 use std::io::Write;
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
 
 pub struct Renderer {
-    segments: Vec<Segment>,
-    pub base_style: ColorSpec,
-    pub separator: String,
+    pub display_config: DisplayConfig,
 }
 
 impl Renderer {
-    pub fn new(segments: Vec<Segment>, base_style: ColorSpec, separator: &str) -> Self {
-        Renderer {
-            segments,
-            base_style,
-            separator: separator.to_owned(),
-        }
+    pub fn new(mut display_config: DisplayConfig) -> Self {
+        // reset stays false for segments but we hardcode it to true
+        // for the base style. TODO: find a better way to do this
+        display_config.base_style.set_reset(true);
+
+        Renderer { display_config }
     }
 
     pub fn render(
@@ -23,19 +23,17 @@ impl Renderer {
         out: &mut StandardStream,
         resp: &WeatherResponse,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        if self.segments.is_empty() {
+        if self.display_config.segments.is_empty() {
             return Ok(());
         }
 
-        out.set_color(&self.base_style)?;
+        out.set_color(&self.display_config.base_style)?;
 
-        self.segments[0]
-            .inner
-            .render(out, &self.base_style, &resp)?;
-        for s in self.segments[1..].iter() {
-            out.set_color(&self.base_style)?;
-            write!(out, "{}", self.separator)?;
-            s.inner.render(out, &self.base_style, &resp)?;
+        self.display_config.segments[0].render(out, &self.display_config.base_style, &resp)?;
+        for s in self.display_config.segments[1..].iter() {
+            out.set_color(&self.display_config.base_style)?;
+            write!(out, "{}", self.display_config.separator)?;
+            s.render(out, &self.display_config.base_style, &resp)?;
         }
 
         out.reset()?;
@@ -44,20 +42,45 @@ impl Renderer {
     }
 }
 
-pub struct Segment {
-    inner: Box<dyn SegmentContent>,
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Segment {
+    Instant(Instant),
+    LocationName(LocationName),
+    Temperature(Temperature),
+    WeatherIcon(WeatherIcon),
+    WeatherDescription(WeatherDescription),
+    WindSpeed(WindSpeed),
+    Humidity(Humidity),
+    Rain(Rain),
+    Pressure(Pressure),
 }
 
-pub trait SegmentContent {
+impl Segment {
     fn render(
         &self,
         out: &mut StandardStream,
         base_style: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> Result<(), Box<dyn std::error::Error>>;
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        match self {
+            Segment::Instant(i) => i.render(out, base_style, resp),
+            Segment::LocationName(i) => i.render(out, base_style, resp),
+            Segment::Temperature(i) => i.render(out, base_style, resp),
+            Segment::WeatherIcon(i) => i.render(out, base_style, resp),
+            Segment::WeatherDescription(i) => i.render(out, base_style, resp),
+            Segment::WindSpeed(i) => i.render(out, base_style, resp),
+            Segment::Humidity(i) => i.render(out, base_style, resp),
+            Segment::Rain(i) => i.render(out, base_style, resp),
+            Segment::Pressure(i) => i.render(out, base_style, resp),
+        }
+    }
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct Instant {
+    #[serde(with = "option_color_spec")]
     pub style: Option<ColorSpec>,
     pub date_format: String,
 }
@@ -76,14 +99,6 @@ impl Instant {
         Instant { style, date_format }
     }
 
-    pub fn build(self) -> Segment {
-        Segment {
-            inner: Box::new(self),
-        }
-    }
-}
-
-impl SegmentContent for Instant {
     fn render(
         &self,
         out: &mut StandardStream,
@@ -102,7 +117,10 @@ impl SegmentContent for Instant {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct LocationName {
+    #[serde(with = "option_color_spec")]
     pub style: Option<ColorSpec>,
 }
 
@@ -120,14 +138,6 @@ impl LocationName {
         Default::default()
     }
 
-    pub fn build(self) -> Segment {
-        Segment {
-            inner: Box::new(self),
-        }
-    }
-}
-
-impl SegmentContent for LocationName {
     fn render(
         &self,
         out: &mut StandardStream,
@@ -150,29 +160,13 @@ const TEMP_COLORS: [u8; 57] = [
     220, 220, 220, 214, 214, 214, 208, 208, 208, 202, 202, 202, 196,
 ];
 
+#[derive(Default, Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct Temperature {
-    pub display_mode: DisplayMode,
-}
-
-impl Default for Temperature {
-    fn default() -> Self {
-        Temperature {
-            display_mode: DisplayMode::NerdFont,
-        }
-    }
+    pub display_mode: Option<DisplayMode>,
 }
 
 impl Temperature {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn build(self) -> Segment {
-        Segment {
-            inner: Box::new(self),
-        }
-    }
-
     fn display_temp(
         &self,
         out: &mut StandardStream,
@@ -192,9 +186,7 @@ impl Temperature {
         write!(out, " °C")?;
         Ok(())
     }
-}
 
-impl SegmentContent for Temperature {
     fn render(
         &self,
         out: &mut StandardStream,
@@ -211,34 +203,15 @@ impl SegmentContent for Temperature {
     }
 }
 
+#[derive(Default, Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct WeatherIcon {
-    pub display_mode: DisplayMode,
+    pub display_mode: Option<DisplayMode>,
+    #[serde(with = "option_color_spec")]
     pub style: Option<ColorSpec>,
 }
 
-impl Default for WeatherIcon {
-    fn default() -> Self {
-        let mut style = ColorSpec::new();
-        style.set_reset(false);
-        style.set_fg(Some(Color::White)).set_bold(true);
-        WeatherIcon {
-            display_mode: DisplayMode::NerdFont,
-            style: Some(style),
-        }
-    }
-}
-
 impl WeatherIcon {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn build(self) -> Segment {
-        Segment {
-            inner: Box::new(self),
-        }
-    }
-
     fn get_icon(&self, id: u16, sunset: i64, sunrise: i64, wind_type: &WindType) -> &'static str {
         let now = Utc::now();
         let night = now >= Utc.timestamp(sunset, 0) || now <= Utc.timestamp(sunrise, 0);
@@ -317,9 +290,7 @@ impl WeatherIcon {
             _ => "\u{e374}",
         }
     }
-}
 
-impl SegmentContent for WeatherIcon {
     fn render(
         &self,
         out: &mut StandardStream,
@@ -360,33 +331,27 @@ fn get_wind_type(speed: f32) -> WindType {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(default)]
 pub struct WeatherDescription {
+    #[serde(with = "option_color_spec")]
     pub style: Option<ColorSpec>,
 }
 
-impl SegmentContent for WeatherDescription {
+impl WeatherDescription {
     fn render(
         &self,
         out: &mut StandardStream,
         _: &ColorSpec,
         resp: &WeatherResponse,
     ) -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> {
+        if let Some(ref style) = self.style {
+            out.set_color(style)?;
+        }
+
         write!(out, "{}", resp.weather[0].description)?;
 
         Ok(())
-    }
-}
-
-impl WeatherDescription {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn build(self) -> Segment {
-        Segment {
-            inner: Box::new(self),
-        }
     }
 }
 
@@ -399,29 +364,13 @@ const WIND_COLORS: [u8; 52] = [
 const WIND_DIR_ICONS: &str =
     "\u{e35a}\u{e359}\u{e35b}\u{e356}\u{e357}\u{e355}\u{e354}\u{e358}\u{e35a}";
 
+#[derive(Default, Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct WindSpeed {
-    pub display_mode: DisplayMode,
-}
-
-impl Default for WindSpeed {
-    fn default() -> Self {
-        WindSpeed {
-            display_mode: DisplayMode::NerdFont,
-        }
-    }
+    pub display_mode: Option<DisplayMode>,
 }
 
 impl WindSpeed {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn build(self) -> Segment {
-        Segment {
-            inner: Box::new(self),
-        }
-    }
-
     fn display_wind(
         &self,
         stdout: &mut StandardStream,
@@ -449,9 +398,7 @@ impl WindSpeed {
         write!(stdout, " km/h")?;
         Ok(())
     }
-}
 
-impl SegmentContent for WindSpeed {
     fn render(
         &self,
         out: &mut StandardStream,
@@ -473,29 +420,13 @@ impl SegmentContent for WindSpeed {
 
 const HUMIDITY_COLORS: [u8; 11] = [220, 226, 190, 118, 82, 46, 48, 50, 51, 45, 39];
 
+#[derive(Default, Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct Humidity {
-    pub display_mode: DisplayMode,
-}
-
-impl Default for Humidity {
-    fn default() -> Self {
-        Humidity {
-            display_mode: DisplayMode::NerdFont,
-        }
-    }
+    pub display_mode: Option<DisplayMode>,
 }
 
 impl Humidity {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn build(self) -> Segment {
-        Segment {
-            inner: Box::new(self),
-        }
-    }
-
     fn display_humidity(
         &self,
         stdout: &mut StandardStream,
@@ -511,9 +442,7 @@ impl Humidity {
         write!(stdout, " %")?;
         Ok(())
     }
-}
 
-impl SegmentContent for Humidity {
     fn render(
         &self,
         out: &mut StandardStream,
@@ -526,31 +455,13 @@ impl SegmentContent for Humidity {
     }
 }
 
+#[derive(Default, Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct Rain {
-    pub display_mode: DisplayMode,
-}
-
-impl Default for Rain {
-    fn default() -> Self {
-        Rain {
-            display_mode: DisplayMode::NerdFont,
-        }
-    }
+    pub display_mode: Option<DisplayMode>,
 }
 
 impl Rain {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn build(self) -> Segment {
-        Segment {
-            inner: Box::new(self),
-        }
-    }
-}
-
-impl SegmentContent for Rain {
     fn render(
         &self,
         out: &mut StandardStream,
@@ -566,29 +477,13 @@ impl SegmentContent for Rain {
     }
 }
 
+#[derive(Default, Debug, Deserialize, Serialize)]
+#[serde(default)]
 pub struct Pressure {
-    pub display_mode: DisplayMode,
-}
-
-impl Default for Pressure {
-    fn default() -> Self {
-        Pressure {
-            display_mode: DisplayMode::NerdFont,
-        }
-    }
+    pub display_mode: Option<DisplayMode>,
 }
 
 impl Pressure {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    pub fn build(self) -> Segment {
-        Segment {
-            inner: Box::new(self),
-        }
-    }
-
     fn display_pressure(
         &self,
         stdout: &mut StandardStream,
@@ -604,9 +499,7 @@ impl Pressure {
 
         Ok(())
     }
-}
 
-impl SegmentContent for Pressure {
     fn render(
         &self,
         out: &mut StandardStream,

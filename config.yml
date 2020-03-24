@@ -1,0 +1,83 @@
+# Default config file for weather
+
+# OpenWeather API key
+#
+#key: "__replace_me__"
+
+# Location to query
+#
+#location = "Dubai"
+#location = "53.258,3.114"
+location: "London, UK"
+
+# Separator text between entries
+#
+# defaults to two whitespace charaters "  "
+#separator: " | "
+
+# Background style for the whole bar
+# 
+# All other styles support the same options.
+# All colors can be either:
+#  - a color name (black, blue, green, red, cyan, magenta, yellow, white)
+#    example: "yellow"
+#  - an integer between 0 and 255 representing an ANSI color code
+#    example: 122
+#  - a triple of integer representing an RGB color
+#    example: [15, 55, 84]
+base_style:
+  # Background color
+  bg: 17
+  # Foreground color
+  #fg: white
+
+  # Bold text
+  #bold: false
+
+  # Intense text
+  #intense: false
+
+  # Underline text (not supported in all terminals)
+  #underline: false
+
+  # Italic text (not supported in all terminals)
+  #italic: false
+
+# Display mode supported by the terminal emulator:
+# - "ascii"
+#   Only use ASCII charaters. Icons will be very limited or even inexistant.
+#
+# - "unicode"
+#   Use standard Unicode characters. This will use the somewhat limited list of
+#   weather related icons in Unicode. This is the default.
+#
+# - "nerd_fonts"
+#   Use the weather icons provided as part of the Nerd Fonts package.
+#   The provides the most specific and best-looking icons for weather, but must
+#   be installed first.
+#
+#display_mode: "unicode"
+ 
+# Segments to display
+segments:
+  - instant:
+      style:
+        fg: 167
+      date_format: "%v %R %:z"
+  - location_name:
+      style:
+        fg: "white"
+        intense: true
+  - temperature: {}
+  - weather_icon:
+      style:
+        fg: "white"
+        intense: true
+  - weather_description: 
+      style:
+        fg: "white"
+        intense: true
+  - wind_speed: {}
+  - humidity: {}
+  - rain: {}
+  - pressure: {}
