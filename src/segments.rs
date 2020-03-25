@@ -9,6 +9,11 @@ pub struct Renderer {
     pub display_config: DisplayConfig,
 }
 
+enum RenderStatus {
+    Empty,
+    Rendered,
+}
+
 impl Renderer {
     pub fn new(mut display_config: DisplayConfig) -> Self {
         // reset stays false for segments but we hardcode it to true
@@ -29,11 +34,14 @@ impl Renderer {
 
         out.set_color(&self.display_config.base_style)?;
 
-        self.display_config.segments[0].render(out, &self.display_config.base_style, &resp)?;
+        let mut status =
+            self.display_config.segments[0].render(out, &self.display_config.base_style, &resp)?;
         for s in self.display_config.segments[1..].iter() {
             out.set_color(&self.display_config.base_style)?;
-            write!(out, "{}", self.display_config.separator)?;
-            s.render(out, &self.display_config.base_style, &resp)?;
+            if let RenderStatus::Rendered = status {
+                write!(out, "{}", self.display_config.separator)?;
+            }
+            status = s.render(out, &self.display_config.base_style, &resp)?;
         }
 
         out.reset()?;
@@ -62,7 +70,7 @@ impl Segment {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<RenderStatus, Box<dyn std::error::Error>> {
         match self {
             Segment::Instant(i) => i.render(out, base_style, resp),
             Segment::LocationName(i) => i.render(out, base_style, resp),
@@ -104,7 +112,7 @@ impl Instant {
         out: &mut StandardStream,
         _: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<RenderStatus, Box<dyn std::error::Error>> {
         let source_date = FixedOffset::east(resp.timezone).timestamp(resp.dt, 0);
 
         if let Some(ref style) = self.style {
@@ -113,7 +121,7 @@ impl Instant {
 
         write!(out, "{}", source_date.format(&self.date_format))?;
 
-        Ok(())
+        Ok(RenderStatus::Rendered)
     }
 }
 
@@ -143,14 +151,14 @@ impl LocationName {
         out: &mut StandardStream,
         _: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> {
+    ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
 
         write!(out, "{}", resp.name)?;
 
-        Ok(())
+        Ok(RenderStatus::Rendered)
     }
 }
 
@@ -218,7 +226,7 @@ impl Temperature {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> {
+    ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
         write!(out, "\u{e350}")?;
         self.display_temp(out, resp.main.temp, base_style)?;
         if self.feels_like {
@@ -226,7 +234,8 @@ impl Temperature {
             self.display_temp(out, resp.main.feels_like, base_style)?;
             write!(out, ")")?;
         }
-        Ok(())
+
+        Ok(RenderStatus::Rendered)
     }
 }
 
@@ -323,7 +332,7 @@ impl WeatherIcon {
         out: &mut StandardStream,
         _: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> {
+    ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
         let wind_type = resp
             .wind
             .as_ref()
@@ -344,7 +353,7 @@ impl WeatherIcon {
             )
         )?;
 
-        Ok(())
+        Ok(RenderStatus::Rendered)
     }
 }
 
@@ -371,14 +380,14 @@ impl WeatherDescription {
         out: &mut StandardStream,
         _: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> {
+    ) -> std::result::Result<RenderStatus, std::boxed::Box<dyn std::error::Error>> {
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
 
         write!(out, "{}", resp.weather[0].description)?;
 
-        Ok(())
+        Ok(RenderStatus::Rendered)
     }
 }
 
@@ -435,6 +444,7 @@ impl WindSpeed {
         write!(stdout, " {:.1}", speed)?;
         stdout.set_color(base_style)?;
         write!(stdout, " km/h")?;
+
         Ok(())
     }
 
@@ -443,7 +453,7 @@ impl WindSpeed {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> {
+    ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
         if let Some(w) = &resp.wind {
             let wind_type = resp
                 .wind
@@ -453,7 +463,7 @@ impl WindSpeed {
             self.display_wind(out, &w, &wind_type, base_style)?;
         }
 
-        Ok(())
+        Ok(RenderStatus::Rendered)
     }
 }
 
@@ -499,10 +509,10 @@ impl Humidity {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> {
+    ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
         self.display_humidity(out, resp.main.humidity, base_style)?;
 
-        Ok(())
+        Ok(RenderStatus::Rendered)
     }
 }
 
@@ -518,13 +528,16 @@ impl Rain {
         out: &mut StandardStream,
         _: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> {
+    ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
         if let Some(r) = &resp.rain {
             if let Some(mm) = r.one_h.or(r.three_h) {
                 write!(out, "\u{e371} {:.1} mm/h  ", mm)?;
+
+                return Ok(RenderStatus::Rendered);
             }
         }
-        Ok(())
+
+        Ok(RenderStatus::Empty)
     }
 }
 
@@ -556,8 +569,9 @@ impl Pressure {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         resp: &WeatherResponse,
-    ) -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> {
+    ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
         self.display_pressure(out, resp.main.pressure, base_style)?;
-        Ok(())
+
+        Ok(RenderStatus::Rendered)
     }
 }
