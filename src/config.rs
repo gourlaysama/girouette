@@ -206,3 +206,41 @@ pub(crate) mod option_color_spec {
         }
     }
 }
+
+pub(crate) mod scaled_color {
+    use serde::de::{self, Visitor};
+
+    struct SVisitor;
+
+    impl<'de> Visitor<'de> for SVisitor {
+        type Value = ();
+
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("either 'scaled' or a style definition")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<(), E>
+        where
+            E: de::Error,
+        {
+            match value {
+                "scaled" => Ok(()),
+                _ => Err(de::Error::invalid_value(de::Unexpected::Str(value), &"scaled")),
+            }
+        }
+    }
+
+    pub(crate) fn deserialize<'de, D>(d: D) -> Result<(), D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        d.deserialize_str(SVisitor)
+    }
+
+    pub(crate) fn serialize<S>(ser: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        ser.serialize_str("scaled")
+    }
+}

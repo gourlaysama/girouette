@@ -165,6 +165,22 @@ const TEMP_COLORS: [u8; 57] = [
 pub struct Temperature {
     pub display_mode: Option<DisplayMode>,
     pub feels_like: bool,
+    pub style: ScaledColor,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(untagged, rename_all = "snake_case")]
+pub enum ScaledColor {
+    #[serde(with = "scaled_color")]
+    Scaled,
+    #[serde(with = "option_color_spec")]
+    Spec(Option<ColorSpec>),
+}
+
+impl Default for ScaledColor {
+    fn default() -> Self {
+        ScaledColor::Scaled
+    }
 }
 
 impl Temperature {
@@ -174,14 +190,23 @@ impl Temperature {
         temp: f32,
         base_style: &ColorSpec,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let temp_idx = (temp.round() + 16f32).min(57f32).max(0f32) as usize;
+        match &self.style {
+            ScaledColor::Scaled => {
+                let temp_idx = (temp.round() + 16f32).min(57f32).max(0f32) as usize;
 
-        out.set_color(
-            base_style
-                .clone()
-                .set_fg(Some(Color::Ansi256(TEMP_COLORS[temp_idx])))
-                .set_bold(true),
-        )?;
+                out.set_color(
+                    base_style
+                        .clone()
+                        .set_fg(Some(Color::Ansi256(TEMP_COLORS[temp_idx])))
+                        .set_bold(true),
+                )?;
+            }
+            ScaledColor::Spec(Some(style)) => {
+                out.set_color(style)?;
+            }
+            _ => {}
+        }
+
         write!(out, " {:.1}", temp)?;
         out.set_color(base_style)?;
         write!(out, " °C")?;
@@ -370,6 +395,7 @@ const WIND_DIR_ICONS: &str =
 #[serde(default)]
 pub struct WindSpeed {
     pub display_mode: Option<DisplayMode>,
+    pub style: ScaledColor,
 }
 
 impl WindSpeed {
@@ -393,10 +419,21 @@ impl WindSpeed {
         if let WindType::High = wind_type {
             write!(stdout, "\u{e34b}")?;
         }
-        let mut tmp_style = base_style.clone();
-        stdout.set_color(&tmp_style.set_fg(Some(Color::Ansi256(WIND_COLORS[speed_color_idx]))))?;
+
+        match &self.style {
+            ScaledColor::Scaled => {
+                let mut tmp_style = base_style.clone();
+                stdout.set_color(
+                    &tmp_style.set_fg(Some(Color::Ansi256(WIND_COLORS[speed_color_idx]))),
+                )?;
+            }
+            ScaledColor::Spec(Some(style)) => {
+                stdout.set_color(style)?;
+            }
+            _ => {}
+        };
         write!(stdout, " {:.1}", speed)?;
-        stdout.set_color(tmp_style.set_fg(None).set_bold(false))?;
+        stdout.set_color(base_style)?;
         write!(stdout, " km/h")?;
         Ok(())
     }
@@ -426,6 +463,7 @@ const HUMIDITY_COLORS: [u8; 11] = [220, 226, 190, 118, 82, 46, 48, 50, 51, 45, 3
 #[serde(default)]
 pub struct Humidity {
     pub display_mode: Option<DisplayMode>,
+    pub style: ScaledColor,
 }
 
 impl Humidity {
@@ -435,12 +473,23 @@ impl Humidity {
         humidity: u8,
         base_style: &ColorSpec,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let hum_idx = (humidity / 10) as usize;
         write!(stdout, "\u{e373} ")?;
-        let mut tmp_style = base_style.clone();
-        stdout.set_color(tmp_style.set_fg(Some(Color::Ansi256(HUMIDITY_COLORS[hum_idx]))))?;
+
+        match &self.style {
+            ScaledColor::Scaled => {
+                let hum_idx = (humidity / 10) as usize;
+                let mut tmp_style = base_style.clone();
+                stdout
+                    .set_color(tmp_style.set_fg(Some(Color::Ansi256(HUMIDITY_COLORS[hum_idx]))))?;
+            }
+            ScaledColor::Spec(Some(style)) => {
+                stdout.set_color(style)?;
+            }
+            _ => {}
+        };
+
         write!(stdout, "{}", humidity)?;
-        stdout.set_color(tmp_style.set_fg(None))?;
+        stdout.set_color(base_style)?;
         write!(stdout, " %")?;
         Ok(())
     }

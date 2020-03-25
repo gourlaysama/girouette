@@ -66,6 +66,10 @@ segments:
         intense: true
   - temperature:
       feels_like: true
+      #style: "scaled" # by default: auto-scale the color
+      #style:          # or manually set the style
+      #  fg: 213
+      #  bold: true
   - weather_icon:
       style:
         fg: "white"
