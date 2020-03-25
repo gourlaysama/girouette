@@ -3,7 +3,7 @@ pub struct WeatherResponse {
     pub coord: Coord,
     pub weather: Vec<Weather>,
     pub main: Main,
-    pub visibility: u16,
+    pub visibility: Option<u16>,
     pub wind: Option<Wind>,
     pub rain: Option<Rain>,
     pub snow: Option<Snow>,
