@@ -16,7 +16,7 @@ location: "London, UK"
 #separator: " | "
 
 # Background style for the whole bar
-# 
+#
 # All other styles support the same options.
 # All colors can be either:
 #  - a color name (black, blue, green, red, cyan, magenta, yellow, white)
@@ -30,16 +30,12 @@ base_style:
   bg: 17
   # Foreground color
   #fg: white
-
   # Bold text
   #bold: false
-
   # Intense text
   #intense: false
-
   # Underline text (not supported in all terminals)
   #underline: false
-
   # Italic text (not supported in all terminals)
   #italic: false
 
@@ -57,7 +53,7 @@ base_style:
 #   be installed first.
 #
 #display_mode: "unicode"
- 
+
 # Segments to display
 segments:
   - instant:
@@ -68,12 +64,13 @@ segments:
       style:
         fg: "white"
         intense: true
-  - temperature: {}
+  - temperature:
+      feels_like: true
   - weather_icon:
       style:
         fg: "white"
         intense: true
-  - weather_description: 
+  - weather_description:
       style:
         fg: "white"
         intense: true

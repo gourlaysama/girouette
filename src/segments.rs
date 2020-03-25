@@ -164,6 +164,7 @@ const TEMP_COLORS: [u8; 57] = [
 #[serde(default)]
 pub struct Temperature {
     pub display_mode: Option<DisplayMode>,
+    pub feels_like: bool,
 }
 
 impl Temperature {
@@ -195,10 +196,11 @@ impl Temperature {
     ) -> std::result::Result<(), std::boxed::Box<(dyn std::error::Error + 'static)>> {
         write!(out, "\u{e350}")?;
         self.display_temp(out, resp.main.temp, base_style)?;
-        write!(out, " (feels")?;
-        self.display_temp(out, resp.main.feels_like, base_style)?;
-        write!(out, ")")?;
-
+        if self.feels_like {
+            write!(out, " (feels")?;
+            self.display_temp(out, resp.main.feels_like, base_style)?;
+            write!(out, ")")?;
+        }
         Ok(())
     }
 }
