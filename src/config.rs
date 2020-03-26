@@ -41,7 +41,7 @@ impl Default for DisplayConfig {
         DisplayConfig {
             base_style: ColorSpec::default(),
             separator: "  ".to_owned(),
-            display_mode: DisplayMode::Ascii,
+            display_mode: DisplayMode::Unicode,
             segments: Vec::new(),
         }
     }
@@ -225,7 +225,10 @@ pub(crate) mod scaled_color {
         {
             match value {
                 "scaled" => Ok(()),
-                _ => Err(de::Error::invalid_value(de::Unexpected::Str(value), &"scaled")),
+                _ => Err(de::Error::invalid_value(
+                    de::Unexpected::Str(value),
+                    &"scaled",
+                )),
             }
         }
     }

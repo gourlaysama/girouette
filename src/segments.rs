@@ -5,6 +5,16 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
 
+macro_rules! display_print {
+    ($out:ident, $display:ident, $a:expr, $b:expr, $c:expr) => {
+        match $display {
+            DisplayMode::NerdFonts => write!($out, "{}", $a)?,
+            DisplayMode::Unicode => write!($out, "{}", $b)?,
+            DisplayMode::Ascii => write!($out, "{}", $c)?,
+        }
+    };
+}
+
 pub struct Renderer {
     pub display_config: DisplayConfig,
 }
@@ -34,14 +44,23 @@ impl Renderer {
 
         out.set_color(&self.display_config.base_style)?;
 
-        let mut status =
-            self.display_config.segments[0].render(out, &self.display_config.base_style, &resp)?;
+        let mut status = self.display_config.segments[0].render(
+            out,
+            &self.display_config.base_style,
+            self.display_config.display_mode,
+            &resp,
+        )?;
         for s in self.display_config.segments[1..].iter() {
             out.set_color(&self.display_config.base_style)?;
             if let RenderStatus::Rendered = status {
                 write!(out, "{}", self.display_config.separator)?;
             }
-            status = s.render(out, &self.display_config.base_style, &resp)?;
+            status = s.render(
+                out,
+                &self.display_config.base_style,
+                self.display_config.display_mode,
+                &resp,
+            )?;
         }
 
         out.reset()?;
@@ -69,18 +88,19 @@ impl Segment {
         &self,
         out: &mut StandardStream,
         base_style: &ColorSpec,
+        display_mode: DisplayMode,
         resp: &WeatherResponse,
     ) -> Result<RenderStatus, Box<dyn std::error::Error>> {
         match self {
-            Segment::Instant(i) => i.render(out, base_style, resp),
-            Segment::LocationName(i) => i.render(out, base_style, resp),
-            Segment::Temperature(i) => i.render(out, base_style, resp),
-            Segment::WeatherIcon(i) => i.render(out, base_style, resp),
-            Segment::WeatherDescription(i) => i.render(out, base_style, resp),
-            Segment::WindSpeed(i) => i.render(out, base_style, resp),
-            Segment::Humidity(i) => i.render(out, base_style, resp),
-            Segment::Rain(i) => i.render(out, base_style, resp),
-            Segment::Pressure(i) => i.render(out, base_style, resp),
+            Segment::Instant(i) => i.render(out, base_style, display_mode, resp),
+            Segment::LocationName(i) => i.render(out, base_style, display_mode, resp),
+            Segment::Temperature(i) => i.render(out, base_style, display_mode, resp),
+            Segment::WeatherIcon(i) => i.render(out, base_style, display_mode, resp),
+            Segment::WeatherDescription(i) => i.render(out, base_style, display_mode, resp),
+            Segment::WindSpeed(i) => i.render(out, base_style, display_mode, resp),
+            Segment::Humidity(i) => i.render(out, base_style, display_mode, resp),
+            Segment::Rain(i) => i.render(out, base_style, display_mode, resp),
+            Segment::Pressure(i) => i.render(out, base_style, display_mode, resp),
         }
     }
 }
@@ -111,6 +131,7 @@ impl Instant {
         &self,
         out: &mut StandardStream,
         _: &ColorSpec,
+        _: DisplayMode,
         resp: &WeatherResponse,
     ) -> Result<RenderStatus, Box<dyn std::error::Error>> {
         let source_date = FixedOffset::east(resp.timezone).timestamp(resp.dt, 0);
@@ -150,6 +171,7 @@ impl LocationName {
         &self,
         out: &mut StandardStream,
         _: &ColorSpec,
+        _: DisplayMode,
         resp: &WeatherResponse,
     ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
         if let Some(ref style) = self.style {
@@ -225,9 +247,13 @@ impl Temperature {
         &self,
         out: &mut StandardStream,
         base_style: &ColorSpec,
+        display_mode: DisplayMode,
         resp: &WeatherResponse,
     ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
-        write!(out, "\u{e350}")?;
+        let display_mode = self.display_mode.unwrap_or(display_mode);
+
+        display_print!(out, display_mode, "\u{e350}", "T", "T");
+
         self.display_temp(out, resp.main.temp, base_style)?;
         if self.feels_like {
             write!(out, " (feels")?;
@@ -248,9 +274,7 @@ pub struct WeatherIcon {
 }
 
 impl WeatherIcon {
-    fn get_icon(&self, id: u16, sunset: i64, sunrise: i64, wind_type: &WindType) -> &'static str {
-        let now = Utc::now();
-        let night = now >= Utc.timestamp(sunset, 0) || now <= Utc.timestamp(sunrise, 0);
+    fn get_icon(&self, id: u16, night: bool, wind_type: &WindType) -> &'static str {
         match (night, id) {
             // thunderstorm + rain
             (true, 200..=209) => "\u{e32a}",
@@ -327,33 +351,95 @@ impl WeatherIcon {
         }
     }
 
+    fn get_unicode(&self, id: u16, night: bool) -> &'static str {
+        match (night, id) {
+            // thunderstorm + rain
+            (_, 200..=209) => "\u{26c8}",
+            // thunderstorm
+            (_, 210..=219) | (_, 221) | (_, 230..=239) => "\u{1f329}",
+            // rain (all types)
+            (true, 300..=309)
+            | (true, 310..=312)
+            | (true, 500..=509)
+            | (true, 511)
+            | (true, 520..=529)
+            | (true, 313..=319)
+            | (true, 531)
+            | (true, 611..=615)
+            | (true, 620..=629)
+            | (true, 616) => "\u{1f327}",
+            (false, 300..=309)
+            | (false, 310..=312)
+            | (false, 500..=509)
+            | (false, 511)
+            | (false, 520..=529)
+            | (false, 313..=319)
+            | (false, 531)
+            | (false, 613..=615)
+            | (false, 620..=629)
+            | (false, 616) => "\u{1f326}",
+            // snow
+            (_, 600..=609) => "\u{1f328}",
+            // mist/fog/smoke/haze/dust/sandstorm/ash
+            (_, 701)
+            | (_, 711)
+            | (false, 721)
+            | (_, 731)
+            | (_, 761)
+            | (_, 741)
+            | (_, 751)
+            | (_, 762) => "\u{1f32b}",
+            // squalls
+            (_, 771) => "\u{1f32c}",
+            // tornado
+            (_, 781) => "\u{1f32a}",
+            // clear
+            (true, 800) => "\u{263e}",
+            (false, 800) => "\u{1f31e}",
+            // clouds 25-50%
+            (false, 801) => "\u{1f324}",
+            // clouds >=50%
+            (true, 801..=809) => "\u{2601}",
+            (false, 802..=809) => "\u{26c5}",
+            _ => "\u{e374}",
+        }
+    }
+
     fn render(
         &self,
         out: &mut StandardStream,
         _: &ColorSpec,
+        display_mode: DisplayMode,
         resp: &WeatherResponse,
     ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
-        let wind_type = resp
-            .wind
-            .as_ref()
-            .map_or(WindType::Low, |w| get_wind_type(w.speed));
-
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
 
-        write!(
-            out,
-            "{}",
-            self.get_icon(
-                resp.weather[0].id,
-                resp.sys.sunset,
-                resp.sys.sunrise,
-                &wind_type
-            )
-        )?;
+        let now = Utc::now();
+        let night =
+            now >= Utc.timestamp(resp.sys.sunset, 0) || now <= Utc.timestamp(resp.sys.sunrise, 0);
 
-        Ok(RenderStatus::Rendered)
+        display_print!(
+            out,
+            display_mode,
+            {
+                let wind_type = resp
+                    .wind
+                    .as_ref()
+                    .map_or(WindType::Low, |w| get_wind_type(w.speed));
+
+                self.get_icon(resp.weather[0].id, night, &wind_type)
+            },
+            self.get_unicode(resp.weather[0].id, night),
+            ""
+        );
+
+        if let DisplayMode::Ascii = display_mode {
+            Ok(RenderStatus::Empty)
+        } else {
+            Ok(RenderStatus::Rendered)
+        }
     }
 }
 
@@ -379,6 +465,7 @@ impl WeatherDescription {
         &self,
         out: &mut StandardStream,
         _: &ColorSpec,
+        _: DisplayMode,
         resp: &WeatherResponse,
     ) -> std::result::Result<RenderStatus, std::boxed::Box<dyn std::error::Error>> {
         if let Some(ref style) = self.style {
@@ -400,6 +487,11 @@ const WIND_COLORS: [u8; 52] = [
 const WIND_DIR_ICONS: &str =
     "\u{e35a}\u{e359}\u{e35b}\u{e356}\u{e357}\u{e355}\u{e354}\u{e358}\u{e35a}";
 
+const WIND_DIR_UNICODE: &str =
+    "\u{2b07}\u{2199}\u{2b05}\u{2196}\u{2b06}\u{2197}\u{27a1}\u{2198}\u{2b07}";
+
+const WIND_DIR_ASCII: &str = " S  SW W  NW N  NE E  SE S ";
+
 #[derive(Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct WindSpeed {
@@ -414,23 +506,32 @@ impl WindSpeed {
         wind: &Wind,
         wind_type: &WindType,
         base_style: &ColorSpec,
+        display_mode: DisplayMode,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        let (icons, fallback) = match display_mode {
+            DisplayMode::Ascii => (WIND_DIR_ASCII, ""),
+            DisplayMode::Unicode => (WIND_DIR_UNICODE, ""),
+            DisplayMode::NerdFonts => (WIND_DIR_ICONS, "\u{e3a9}"),
+        };
+
         let icon = wind
             .deg
             .map(|deg| {
                 let dir_idx = ((deg + 22.5) / 45f32).floor() as usize;
-                &WIND_DIR_ICONS[3 * dir_idx..3 * dir_idx + 3]
+                &icons[3 * dir_idx..3 * dir_idx + 3]
             })
-            .unwrap_or("\u{e3a9}");
-        let speed = wind.speed * 3.6;
-        let speed_color_idx = speed.floor() as usize;
+            .unwrap_or(fallback);
         write!(stdout, "{}", icon)?;
+
         if let WindType::High = wind_type {
-            write!(stdout, "\u{e34b}")?;
+            display_print!(stdout, display_mode, "\u{e34b}", "\u{1f32c}", "");
         }
+
+        let speed = wind.speed * 3.6;
 
         match &self.style {
             ScaledColor::Scaled => {
+                let speed_color_idx = speed.floor() as usize;
                 let mut tmp_style = base_style.clone();
                 stdout.set_color(
                     &tmp_style.set_fg(Some(Color::Ansi256(WIND_COLORS[speed_color_idx]))),
@@ -452,6 +553,7 @@ impl WindSpeed {
         &self,
         out: &mut StandardStream,
         base_style: &ColorSpec,
+        display_mode: DisplayMode,
         resp: &WeatherResponse,
     ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
         if let Some(w) = &resp.wind {
@@ -460,7 +562,7 @@ impl WindSpeed {
                 .as_ref()
                 .map_or(WindType::Low, |w| get_wind_type(w.speed));
 
-            self.display_wind(out, &w, &wind_type, base_style)?;
+            self.display_wind(out, &w, &wind_type, base_style, display_mode)?;
         }
 
         Ok(RenderStatus::Rendered)
@@ -482,8 +584,9 @@ impl Humidity {
         stdout: &mut StandardStream,
         humidity: u8,
         base_style: &ColorSpec,
+        display_mode: DisplayMode,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        write!(stdout, "\u{e373} ")?;
+        display_print!(stdout, display_mode, "\u{e373}", "H", "H");
 
         match &self.style {
             ScaledColor::Scaled => {
@@ -498,7 +601,7 @@ impl Humidity {
             _ => {}
         };
 
-        write!(stdout, "{}", humidity)?;
+        write!(stdout, " {}", humidity)?;
         stdout.set_color(base_style)?;
         write!(stdout, " %")?;
         Ok(())
@@ -508,9 +611,10 @@ impl Humidity {
         &self,
         out: &mut StandardStream,
         base_style: &ColorSpec,
+        display_mode: DisplayMode,
         resp: &WeatherResponse,
     ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
-        self.display_humidity(out, resp.main.humidity, base_style)?;
+        self.display_humidity(out, resp.main.humidity, base_style, display_mode)?;
 
         Ok(RenderStatus::Rendered)
     }
@@ -527,11 +631,13 @@ impl Rain {
         &self,
         out: &mut StandardStream,
         _: &ColorSpec,
+        display_mode: DisplayMode,
         resp: &WeatherResponse,
     ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
         if let Some(r) = &resp.rain {
             if let Some(mm) = r.one_h.or(r.three_h) {
-                write!(out, "\u{e371} {:.1} mm/h  ", mm)?;
+                display_print!(out, display_mode, "\u{e371}", "\u{2614}", "R");
+                write!(out, " {:.1} mm/h  ", mm)?;
 
                 return Ok(RenderStatus::Rendered);
             }
@@ -553,11 +659,13 @@ impl Pressure {
         stdout: &mut StandardStream,
         pressure: u16,
         base_style: &ColorSpec,
+        display_mode: DisplayMode,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        write!(stdout, "\u{e372} ")?;
+        display_print!(stdout, display_mode, "\u{e372}", "P", "P");
+
         let mut tmp_style = base_style.clone();
         stdout.set_color(tmp_style.set_fg(Some(Color::White)))?;
-        write!(stdout, "{}", pressure)?;
+        write!(stdout, " {}", pressure)?;
         stdout.set_color(tmp_style.set_fg(None))?;
         write!(stdout, " hPa")?;
 
@@ -568,9 +676,10 @@ impl Pressure {
         &self,
         out: &mut StandardStream,
         base_style: &ColorSpec,
+        display_mode: DisplayMode,
         resp: &WeatherResponse,
     ) -> std::result::Result<RenderStatus, Box<dyn std::error::Error>> {
-        self.display_pressure(out, resp.main.pressure, base_style)?;
+        self.display_pressure(out, resp.main.pressure, base_style, display_mode)?;
 
         Ok(RenderStatus::Rendered)
     }
