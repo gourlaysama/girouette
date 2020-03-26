@@ -237,6 +237,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "girouette"
+version = "0.1.1-dev"
+dependencies = [
+ "chrono",
+ "config",
+ "reqwest",
+ "serde 1.0.105",
+ "structopt",
+ "termcolor",
+ "tokio",
+]
+
+[[package]]
 name = "h2"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1336,19 +1349,6 @@ name = "wasm-bindgen-shared"
 version = "0.2.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc9f36ad51f25b0219a3d4d13b90eb44cd075dff8b6280cca015775d7acaddd8"
-
-[[package]]
-name = "weather"
-version = "0.1.1-dev"
-dependencies = [
- "chrono",
- "config",
- "reqwest",
- "serde 1.0.105",
- "structopt",
- "termcolor",
- "tokio",
-]
 
 [[package]]
 name = "web-sys"

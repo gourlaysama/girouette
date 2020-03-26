@@ -1,8 +1,8 @@
+use girouette::{config::ProgramConfig, segments::*, Location, WeatherClient};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use structopt::StructOpt;
 use termcolor::*;
-use weather::{config::ProgramConfig, segments::*, Location, WeatherClient};
 
 #[derive(StructOpt, Debug, Serialize, Deserialize)]
 #[structopt(about = "Display the current weather using the Openweather API.")]
