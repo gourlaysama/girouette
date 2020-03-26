@@ -1,5 +1,3 @@
-dev-version-ext = "dev"
-post-release-commit-message = "release: bumping to {{next_version}} after {{version}} release"
 pre-release-commit-message = "release: {{version}}"
 pre-release-replacements = [
   {file="CHANGELOG.md", search="Unreleased", replace="{{version}}"},
