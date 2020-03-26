@@ -12,7 +12,7 @@ girouette requires an [OpenWeather API key] (free for 1 call per second).
 girouette is written in Rust, so you need a [Rust install] to build it. girouette compiles with
 Rust 1.42 or newer.
 
-Build the latest release (0.2.0)
+Build the latest release (0.2.0) from source with:
 
 ```sh
 $ git clone https://github.com/gourlaysama/girouette -b v0.2.0

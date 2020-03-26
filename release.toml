@@ -3,10 +3,10 @@ pre-release-replacements = [
   {file="CHANGELOG.md", search="Unreleased", replace="{{version}}"},
   {file="CHANGELOG.md", search="\\.\\.\\.HEAD", replace="...{{tag_name}}"},
   {file="CHANGELOG.md", search="TBD", replace="{{date}}"},
-  {file="CHANGELOG.md", search="<!-- next-header -->", replace="<!-- next-header -->\n## [Unreleased] - TBD"},
+  {file="CHANGELOG.md", search="<!-- next-header -->", replace="<!-- next-header -->\n## [Unreleased] - TBD\n\n"},
   {file="CHANGELOG.md", search="<!-- next-url -->", replace="<!-- next-url -->\n[Unreleased]: https://github.com/gourlaysama/girouette/compare/{{tag_name}}...HEAD"},
   {file="README.md", search="-b v.+\n\\$", replace="-b v{{version}}\n$"},
   {file="README.md", search="--version\ngirouette .+", replace="--version\ngirouette {{version}}"},
-  {file="README.md", search="latest release (.+)", replace="latest release ({{version}})"},
+  {file="README.md", search="latest release \\(.+\\)", replace="latest release ({{version}})"},
 ]
 sign-commit = true
