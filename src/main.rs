@@ -1,3 +1,4 @@
+use directories::ProjectDirs;
 use girouette::{config::ProgramConfig, segments::*, Location, WeatherClient};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -20,10 +21,20 @@ struct ProgramOptions {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = ProgramOptions::from_args();
+
+    let mut empty = true;
     let mut conf = config::Config::default();
     if let Some(path) = options.config {
-        conf.merge(config::File::from(path))?;
-    } else {
+        conf.merge(config::File::from(path.as_ref()))?;
+    } else if let Some(p) = ProjectDirs::from("rs", "", "Girouette") {
+        let f = p.config_dir().join("config.yml");
+
+        if f.exists() {
+            conf.merge(config::File::from(f))?;
+            empty = false;
+        }
+    };
+    if empty {
         // fallback config so that first users see something
         conf.merge(config::File::from_str(
             include_str!("../config.yml"),
