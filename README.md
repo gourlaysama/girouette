@@ -1,11 +1,11 @@
 # girouette
 
-**girouette** is a command line tool that displays the current weather in the terminal.
-It queries the OpenWeather API for data, then shows it with optional (256) colors.
-It currently requires [Nerd Fonts] to be installed.
+**girouette** is a command line tool that displays the current weather (from [OpenWeather])
+in the terminal.
 
-* Requires the `-k/--key` option to choose the OpenWeather API key
-* Requires the `-l/--location` option to choose the location (text or `lat,lon`)
+It supports ASCII, Unicode and Nerd Fonts output with full color output.
+
+girouette requires an [OpenWeather API key] (free for 1 call per second).
 
 ## Install
 
@@ -20,7 +20,8 @@ $ cd girouette
 $ cargo build --release
 $ ./target/release/girouette --version
 girouette 0.1.0
-```
+``
+
 
 #### License
 
@@ -35,3 +36,6 @@ Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in girouette by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
 </sub>
+
+[OpenWeather]: https://openweathermap.org
+[OpenWeather API key]: https://openweathermap.org/appid
