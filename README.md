@@ -7,6 +7,8 @@ It supports ASCII, Unicode and Nerd Fonts output with full color output.
 
 girouette requires an [OpenWeather API key] (free for 1 call per second).
 
+![ci](https://github.com/gourlaysama/girouette/workflows/Continuous%20integration/badge.svg?branch=master)
+
 ## Install
 
 girouette is written in Rust, so you need a [Rust install] to build it. girouette compiles with
