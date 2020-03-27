@@ -5,6 +5,16 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Changed
+
+* girouette supports a `GIROUETTE_LOG` that can be set to `warn/info/debug/trace` and supports the
+  usual `env_logger` features.
+* LTO is now enabled for release builds.
+
+### Fixed
+
+* High winds are now properly indicated (above 35 km/h).
+* Much improved error output.
 
 ## [0.2.0] - 2020-03-26
 
