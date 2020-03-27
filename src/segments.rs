@@ -516,7 +516,6 @@ impl WindSpeed {
         &self,
         stdout: &mut StandardStream,
         wind: &Wind,
-        wind_type: &WindType,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
     ) -> Result<(), Error> {
@@ -535,11 +534,11 @@ impl WindSpeed {
             .unwrap_or(fallback);
         write!(stdout, "{}", icon)?;
 
-        if let WindType::High = wind_type {
-            display_print!(stdout, display_mode, "\u{e34b}", "\u{1f32c}", "");
-        }
-
         let speed = wind.speed * 3.6;
+
+        if let WindType::High = get_wind_type(speed) {
+            display_print!(stdout, display_mode, "\u{e34b} ", " \u{1f32c} ", "");
+        }
 
         match &self.style {
             ScaledColor::Scaled => {
@@ -569,15 +568,11 @@ impl WindSpeed {
         resp: &WeatherResponse,
     ) -> Result<RenderStatus, Error> {
         if let Some(w) = &resp.wind {
-            let wind_type = resp
-                .wind
-                .as_ref()
-                .map_or(WindType::Low, |w| get_wind_type(w.speed));
-
-            self.display_wind(out, &w, &wind_type, base_style, display_mode)?;
+            self.display_wind(out, &w, base_style, display_mode)?;
+            Ok(RenderStatus::Rendered)
+        } else {
+            Ok(RenderStatus::Empty)
         }
-
-        Ok(RenderStatus::Rendered)
     }
 }
 
