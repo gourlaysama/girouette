@@ -2,6 +2,7 @@ pub mod config;
 pub mod response;
 pub mod segments;
 
+use log::debug;
 use response::WeatherResponse;
 use serde::{Deserialize, Serialize};
 
@@ -48,6 +49,8 @@ impl Location {
             if let (Ok(lat), Ok(lon)) = (sp[0].parse(), sp[1].parse()) {
                 return Location::LatLon(lat, lon);
             }
+
+            debug!("could not parse '{}' as 'lat,lon', assuming it is a place", s);
         }
 
         Location::Place(s.to_owned())
@@ -71,6 +74,7 @@ impl WeatherClient {
         location: Location,
         key: String,
     ) -> Result<WeatherResponse, Box<dyn std::error::Error>> {
+        debug!("querying {:?}", location);
         let mut params = Vec::with_capacity(3);
         match location {
             Location::LatLon(lat, lon) => {
