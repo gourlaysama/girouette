@@ -4,7 +4,7 @@ pub mod segments;
 
 use failure::*;
 use log::*;
-use response::WeatherResponse;
+use response::{ApiResponse, WeatherResponse};
 use serde::{Deserialize, Serialize};
 
 const API_URL: &str = "https://api.openweathermap.org/data/2.5/weather?units=metric";
@@ -76,17 +76,17 @@ impl WeatherClient {
     pub async fn query(&self, location: Location, key: String) -> Result<WeatherResponse, Error> {
         debug!("querying {:?}", location);
         let mut params = Vec::with_capacity(3);
-        match location {
+        match &location {
             Location::LatLon(lat, lon) => {
                 params.push(("lat", lat.to_string()));
                 params.push(("lon", lon.to_string()));
             }
-            Location::Place(place) => params.push(("q", place)),
+            Location::Place(place) => params.push(("q", place.to_string())),
         };
 
         params.push(("appid", key));
 
-        let resp = self
+        let bytes = self
             .client
             .get(API_URL)
             .query(&params)
@@ -97,10 +97,20 @@ impl WeatherClient {
             .context("Unable to connect to openweathermap.org")?;
 
         if log_enabled!(Level::Trace) {
-            trace!("received response: {}", std::str::from_utf8(&resp)?);
+            trace!("received response: {}", std::str::from_utf8(&bytes)?);
         }
 
-        serde_json::from_slice(&resp).map_err(|e| e.into())
+        let resp: ApiResponse = serde_json::from_slice(&bytes)?;
+
+        match resp {
+            ApiResponse::Success(w) => Ok(w),
+            ApiResponse::Other { cod, message } => {
+                if cod == "404" {
+                    bail!("location error: '{}' for '{}'", message, location);
+                }
+                bail!("error from OpenWeather API: {}: {}", cod, message);
+            }
+        }
     }
 }
 

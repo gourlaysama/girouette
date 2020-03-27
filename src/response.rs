@@ -1,3 +1,10 @@
+#[derive(serde::Deserialize)]
+#[serde(untagged)]
+pub enum ApiResponse {
+    Success(WeatherResponse),
+    Other { cod: String, message: String },
+}
+
 #[derive(serde::Deserialize, Debug)]
 pub struct WeatherResponse {
     pub coord: Coord,
