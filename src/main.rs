@@ -1,7 +1,7 @@
 use directories::ProjectDirs;
+use failure::*;
 use girouette::{config::ProgramConfig, segments::*, WeatherClient};
 use log::{debug, error, info, trace, warn};
-use failure::*;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use structopt::StructOpt;
