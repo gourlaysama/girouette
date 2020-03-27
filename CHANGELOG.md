@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+
+## [0.2.1] - 2020-03-27
+
 ### Changed
 
 * girouette supports a `GIROUETTE_LOG` that can be set to `warn/info/debug/trace` and supports the
@@ -49,7 +52,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/gourlaysama/girouette/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/gourlaysama/girouette/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/gourlaysama/girouette/compare/e1ab692...v0.1.0
 [Nerd Fonts]: https://www.nerdfonts.com/
