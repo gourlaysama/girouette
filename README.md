@@ -20,7 +20,7 @@ $ cd girouette
 $ cargo build --release
 $ ./target/release/girouette --version
 girouette 0.2.1
-``
+```
 
 
 #### License
