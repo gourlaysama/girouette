@@ -11,6 +11,8 @@ failure = "0.1"
 log = "0.4"
 pretty_env_logger = "0.4"
 termcolor = "1.1"
+reqwest = "0.10"
+serde_json = "1"
 structopt = "0.3"
 
 [dependencies.config]
@@ -20,10 +22,6 @@ features = ["yaml"]
 [dependencies.serde]
 version = '1'
 features = ['derive']
-
-[dependencies.reqwest]
-version = '0.10'
-features = ['json']
 
 [dependencies.tokio]
 version = '0.2'

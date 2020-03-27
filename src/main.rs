@@ -1,6 +1,7 @@
 use directories::ProjectDirs;
 use girouette::{config::ProgramConfig, segments::*, WeatherClient};
 use log::{debug, error, info, trace, warn};
+use failure::*;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -30,16 +31,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(()) => 0,
             Err(e) => {
                 error!("{}", e);
-                if let Some(s) = e.source() {
-                    debug!("source: {}", s)
-                };
+                for cause in e.as_fail().iter_causes() {
+                    info!("cause: {}", cause);
+                }
                 1
             }
         }
     })
 }
 
-async fn run_async() -> Result<(), Box<dyn std::error::Error>> {
+async fn run_async() -> Result<(), Error> {
     let conf = make_config()?;
 
     let resp = WeatherClient::new()
@@ -54,7 +55,6 @@ async fn run_async() -> Result<(), Box<dyn std::error::Error>> {
             })?,
         )
         .await?;
-
     let mut stdout = StandardStream::stdout(ColorChoice::Auto);
 
     let mut renderer = Renderer::new(conf.display_config);
@@ -63,18 +63,18 @@ async fn run_async() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn make_config() -> Result<ProgramConfig, Box<dyn std::error::Error>> {
+fn make_config() -> Result<ProgramConfig, Error> {
     let options = ProgramOptions::from_args();
 
     let mut empty = false;
     let mut conf = config::Config::default();
     if let Some(path) = options.config {
-        debug!("Looking for config file '{}'", path.display());
+        debug!("looking for config file '{}'", path.display());
         conf.merge(config::File::from(path.as_ref()))?;
         info!("using config from '{}'", path.canonicalize()?.display());
     } else if let Some(p) = ProjectDirs::from("rs", "", "Girouette") {
         let f = p.config_dir().join("config.yml");
-        debug!("Looking for config file '{}'", f.display());
+        debug!("looking for config file '{}'", f.display());
 
         if f.exists() {
             info!("using config from '{}'", f.canonicalize()?.display());
