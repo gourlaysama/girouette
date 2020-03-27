@@ -40,6 +40,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn run_async() -> Result<(), Box<dyn std::error::Error>> {
+    let conf = make_config()?;
+
+    let resp = WeatherClient::new()
+        .query(
+            conf.location
+                .ok_or_else(|| failure::err_msg("no location to query"))?,
+            conf.key.ok_or_else(|| {
+                failure::err_msg(
+                    "no API key for OpenWeather was found
+                   you can get a key over at https://openweathermap.org/appid",
+                )
+            })?,
+        )
+        .await?;
+
+    let mut stdout = StandardStream::stdout(ColorChoice::Auto);
+
+    let mut style = ColorSpec::new();
+    style.set_bg(Some(Color::Rgb(15, 55, 84)));
+    let mut renderer = Renderer::new(conf.display_config);
+    renderer.render(&mut stdout, &resp)?;
+
+    Ok(())
+}
+
+fn make_config() -> Result<ProgramConfig, Box<dyn std::error::Error>> {
     let options = ProgramOptions::from_args();
 
     let mut empty = false;
@@ -78,23 +104,5 @@ async fn run_async() -> Result<(), Box<dyn std::error::Error>> {
     let conf: ProgramConfig = conf.try_into()?;
     trace!("full config: {:#?}", conf);
 
-    let resp = WeatherClient::new()
-        .query(
-            conf.location
-                .ok_or_else(|| failure::err_msg("no location to query"))?,
-            conf.key.ok_or_else(|| {
-                failure::err_msg("no API key for OpenWeather was found
-                   you can get a key over at https://openweathermap.org/appid")
-            })?,
-        )
-        .await?;
-
-    let mut stdout = StandardStream::stdout(ColorChoice::Auto);
-
-    let mut style = ColorSpec::new();
-    style.set_bg(Some(Color::Rgb(15, 55, 84)));
-    let mut renderer = Renderer::new(conf.display_config);
-    renderer.render(&mut stdout, &resp)?;
-
-    Ok(())
+    Ok(conf)
 }
