@@ -57,8 +57,6 @@ async fn run_async() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut stdout = StandardStream::stdout(ColorChoice::Auto);
 
-    let mut style = ColorSpec::new();
-    style.set_bg(Some(Color::Rgb(15, 55, 84)));
     let mut renderer = Renderer::new(conf.display_config);
     renderer.render(&mut stdout, &resp)?;
 
