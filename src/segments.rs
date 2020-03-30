@@ -149,20 +149,11 @@ impl Instant {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct LocationName {
     #[serde(with = "option_color_spec")]
     pub style: Option<ColorSpec>,
-}
-
-impl Default for LocationName {
-    fn default() -> Self {
-        let mut style = ColorSpec::new();
-        style.set_reset(false);
-        style.set_fg(Some(Color::Blue)).set_intense(true);
-        LocationName { style: Some(style) }
-    }
 }
 
 impl LocationName {

@@ -15,7 +15,7 @@ location: "London, UK"
 # defaults to two whitespace charaters "  "
 #separator: " | "
 
-cache: "1m"
+# cache: "1m"
 
 # Background style for the whole bar
 #
@@ -31,7 +31,7 @@ base_style:
   # Background color
   bg: 17
   # Foreground color
-  #fg: white
+  fg: 248
   # Bold text
   #bold: false
   # Intense text
@@ -80,7 +80,12 @@ segments:
       style:
         fg: "white"
         intense: true
+  - rain:
+      style:
+        fg: 45
   - wind_speed: {}
   - humidity: {}
-  - rain: {}
-  - pressure: {}
+  - pressure:
+      style:
+        fg: green
+        intense: true
