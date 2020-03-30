@@ -1,4 +1,4 @@
-use crate::config::*;
+use crate::{config::*, serde_utils::*};
 use crate::{response::Wind, DisplayMode, WeatherResponse, WindType};
 use chrono::{FixedOffset, TimeZone, Utc};
 use failure::*;

@@ -1,6 +1,7 @@
 pub mod config;
 pub mod response;
 pub mod segments;
+mod serde_utils;
 
 use directories::ProjectDirs;
 use failure::*;

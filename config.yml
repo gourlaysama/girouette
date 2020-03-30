@@ -64,7 +64,7 @@ segments:
       date_format: "%v %R %:z"
   - location_name:
       style:
-        fg: "white"
+        fg: white
         intense: true
   - temperature:
       feels_like: true
@@ -74,11 +74,11 @@ segments:
       #  bold: true
   - weather_icon:
       style:
-        fg: "white"
+        fg: white
         intense: true
   - weather_description:
       style:
-        fg: "white"
+        fg: white
         intense: true
   - rain:
       style:
