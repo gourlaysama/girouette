@@ -5,6 +5,15 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* The new `-c/--cache <duration>` option will cache API responses and reuse them on following invocations,
+  within a time limit like `1m 15s`, `2 days`, etc. The cache is only written when the option is present.
+* The `rain` and `pressure` can now be styled like the other segments in the configuration.
+
+### Changed
+
+* Tweaked the fallback color theme used when users do not have a configuration file.
 
 ## [0.2.1] - 2020-03-27
 
