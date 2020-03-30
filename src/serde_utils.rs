@@ -174,7 +174,7 @@ pub(crate) mod segment_vec {
         type Value = Vec<Segment>;
 
         fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-            f.write_str("either 'scaled' or a style definition")
+            f.write_str("a segment name, alone or as key to a mapping of options")
         }
 
         fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
@@ -185,8 +185,7 @@ pub(crate) mod segment_vec {
             while let Some(inner) = seq.next_element()? {
                 match inner {
                     Inner::Struct(s) => vec.push(s),
-                    Inner::Name(mut name) => {
-                        name.make_ascii_lowercase();
+                    Inner::Name(name) => {
                         vec.push(match name.as_ref() {
                             "instant" => Segment::Instant(Instant::default()),
                             "location_name" => Segment::LocationName(LocationName::default()),
@@ -199,7 +198,17 @@ pub(crate) mod segment_vec {
                             "humidity" => Segment::Humidity(Humidity::default()),
                             "rain" => Segment::Rain(Rain::default()),
                             "pressure" => Segment::Pressure(Pressure::default()),
-                            _ => return Err(de::Error::custom("wrong segment name")),
+                            a => return Err(de::Error::unknown_variant(a, &[
+                                "instant",
+                                "location_name",
+                                "temperature",
+                                "weather_icon",
+                                "weather_description",
+                                "wind_speed",
+                                "humidity",
+                                "rain",
+                                "pressure"
+                                ])),
                         });
                     }
                 }
