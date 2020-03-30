@@ -631,20 +631,27 @@ impl Humidity {
 #[serde(default)]
 pub struct Rain {
     pub display_mode: Option<DisplayMode>,
+    #[serde(with = "option_color_spec")]
+    pub style: Option<ColorSpec>,
 }
 
 impl Rain {
     fn render(
         &self,
         out: &mut StandardStream,
-        _: &ColorSpec,
+        base_style: &ColorSpec,
         display_mode: DisplayMode,
         resp: &WeatherResponse,
     ) -> Result<RenderStatus, Error> {
         if let Some(r) = &resp.rain {
             if let Some(mm) = r.one_h.or(r.three_h) {
                 display_print!(out, display_mode, "\u{e371}", "\u{2614}", "R");
-                write!(out, " {:.1} mm/h  ", mm)?;
+                if let Some(ref style) = self.style {
+                    out.set_color(style)?;
+                }
+                write!(out, " {:.1} ", mm)?;
+                out.set_color(base_style)?;
+                write!(out, "mm/h")?;
 
                 return Ok(RenderStatus::Rendered);
             }
@@ -659,6 +666,8 @@ impl Rain {
 #[serde(default)]
 pub struct Pressure {
     pub display_mode: Option<DisplayMode>,
+    #[serde(with = "option_color_spec")]
+    pub style: Option<ColorSpec>,
 }
 
 impl Pressure {
@@ -671,10 +680,11 @@ impl Pressure {
     ) -> Result<(), Error> {
         display_print!(stdout, display_mode, "\u{e372}", "P", "P");
 
-        let mut tmp_style = base_style.clone();
-        stdout.set_color(tmp_style.set_fg(Some(Color::White)))?;
+        if let Some(ref style) = self.style {
+            stdout.set_color(style)?;
+        }
         write!(stdout, " {}", pressure)?;
-        stdout.set_color(tmp_style.set_fg(None))?;
+        stdout.set_color(base_style)?;
         write!(stdout, " hPa")?;
 
         Ok(())
