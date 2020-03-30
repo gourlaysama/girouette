@@ -83,8 +83,8 @@ segments:
   - rain:
       style:
         fg: 45
-  - wind_speed: {}
-  - humidity: {}
+  - wind_speed
+  - humidity
   - pressure:
       style:
         fg: green

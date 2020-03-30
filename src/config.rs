@@ -36,6 +36,7 @@ pub struct DisplayConfig {
 
     pub display_mode: DisplayMode,
 
+    #[serde(deserialize_with = "segment_vec::deserialize")]
     pub segments: Vec<Segment>,
 }
 
@@ -248,5 +249,65 @@ pub(crate) mod scaled_color {
         S: serde::Serializer,
     {
         ser.serialize_str("scaled")
+    }
+}
+
+pub(crate) mod segment_vec {
+    use crate::segments::*;
+    use serde::de::{self, Visitor};
+
+    #[derive(serde::Deserialize)]
+    #[serde(untagged)]
+    enum Inner {
+        Name(String),
+        Struct(Segment),
+    }
+
+    struct SVisitor;
+
+    impl<'de> Visitor<'de> for SVisitor {
+        type Value = Vec<Segment>;
+
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("either 'scaled' or a style definition")
+        }
+
+        fn visit_seq<S>(self, mut seq: S) -> Result<Self::Value, S::Error>
+        where
+            S: de::SeqAccess<'de>,
+        {
+            let mut vec = Vec::new();
+            while let Some(inner) = seq.next_element()? {
+                match inner {
+                    Inner::Struct(s) => vec.push(s),
+                    Inner::Name(mut name) => {
+                        name.make_ascii_lowercase();
+                        vec.push(match name.as_ref() {
+                            "instant" => Segment::Instant(Instant::default()),
+                            "location_name" => Segment::LocationName(LocationName::default()),
+                            "temperature" => Segment::Temperature(Temperature::default()),
+                            "weather_icon" => Segment::WeatherIcon(WeatherIcon::default()),
+                            "weather_description" => {
+                                Segment::WeatherDescription(WeatherDescription::default())
+                            }
+                            "wind_speed" => Segment::WindSpeed(WindSpeed::default()),
+                            "humidity" => Segment::Humidity(Humidity::default()),
+                            "rain" => Segment::Rain(Rain::default()),
+                            "pressure" => Segment::Pressure(Pressure::default()),
+                            _ => return Err(de::Error::custom("wrong segment name")),
+                        });
+                    }
+                }
+            }
+
+            Ok(vec)
+        }
+    }
+
+    pub(crate) fn deserialize<'de, D>(d: D) -> Result<Vec<Segment>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        d.deserialize_seq(SVisitor)
     }
 }
