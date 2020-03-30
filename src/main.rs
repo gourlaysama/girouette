@@ -19,6 +19,9 @@ struct ProgramOptions {
 
     #[structopt(long)]
     config: Option<PathBuf>,
+
+    #[structopt(short, long)]
+    cache: Option<String>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -43,7 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn run_async() -> Result<(), Error> {
     let conf = make_config()?;
 
-    let resp = WeatherClient::new()
+    let resp = WeatherClient::new(conf.cache)
         .query(
             conf.location
                 .ok_or_else(|| failure::err_msg("no location to query"))?,
@@ -98,6 +101,9 @@ fn make_config() -> Result<ProgramConfig, Error> {
     if let Some(location) = options.location {
         conf.set("location", Some(location))?;
     };
+    if let Some(cache) = options.cache {
+        conf.set("cache", Some(cache))?;
+    }
 
     let conf: ProgramConfig = conf.try_into()?;
     trace!("full config: {:#?}", conf);

@@ -2,6 +2,7 @@ pub mod config;
 pub mod response;
 pub mod segments;
 
+use directories::ProjectDirs;
 use failure::*;
 use log::*;
 use response::{ApiResponse, WeatherResponse};
@@ -9,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 const API_URL: &str = "https://api.openweathermap.org/data/2.5/weather?units=metric";
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(from = "String", into = "String")]
 pub enum Location {
     LatLon(f64, f64),
@@ -64,16 +65,93 @@ impl Location {
 #[derive(Default)]
 pub struct WeatherClient {
     client: reqwest::Client,
+    cache_length: Option<String>,
 }
 
 impl WeatherClient {
-    pub fn new() -> Self {
+    pub fn new(cache_length: Option<String>) -> Self {
         WeatherClient {
             client: reqwest::Client::new(),
+            cache_length,
         }
     }
 
+    fn find_cache_for(&self, location: &Location) -> Result<std::path::PathBuf, Error> {
+        if let Some(p) = ProjectDirs::from("rs", "", "Girouette") {
+            let suffix = match location {
+                Location::LatLon(lat, lon) => format!("{}_{}", lat, lon),
+                Location::Place(p) => self.clean_up_for_path(&p),
+            };
+            let file = p.cache_dir().join(format!("results/api-{}.json", suffix));
+            debug!("looking at cache file at '{}'", file.display());
+
+            if let Some(p) = file.parent() {
+                std::fs::create_dir_all(p)?;
+            }
+
+            Ok(file)
+        } else {
+            bail!("Count not locate project directory!");
+        }
+    }
+
+    fn clean_up_for_path(&self, name: &str) -> String {
+        let mut buf = String::with_capacity(name.len());
+        let mut parts = name.split_whitespace();
+        let mut current_part = parts.next();
+        while current_part.is_some() {
+            let value = current_part.unwrap().to_lowercase();
+            buf.push_str(&value);
+            current_part = parts.next();
+            if current_part.is_some() {
+                buf.push_str("_");
+            }
+        }
+        buf
+    }
+
+    fn query_cache(&self, location: &Location) -> Result<Option<WeatherResponse>, Error> {
+        if let Some(ref cache_length) = self.cache_length {
+            let duration = humantime::parse_duration(cache_length)?;
+            let path = self.find_cache_for(&location)?;
+
+            let m = std::fs::metadata(&path)?;
+            let elapsed = m.modified()?.elapsed()?;
+            if elapsed <= duration {
+                let f = std::fs::File::open(&path)?;
+                if let ApiResponse::Success(resp) = serde_json::from_reader(f)? {
+                    info!("using cached response for {}", location);
+                    return Ok(Some(resp));
+                }
+            } else {
+                info!("ignoring expired cached response for {}", location);
+            }
+        }
+
+        Ok(None)
+    }
+
+    fn write_cache(&self, location: Location, bytes: &[u8]) -> Result<(), Error> {
+        let path = self.find_cache_for(&location)?;
+        debug!("writing cache for {}", location);
+        std::fs::write(path, bytes)?;
+
+        Ok(())
+    }
+
     pub async fn query(&self, location: Location, key: String) -> Result<WeatherResponse, Error> {
+        match self.query_cache(&location) {
+            Ok(Some(resp)) => return Ok(resp),
+            Ok(None) => {}
+            Err(e) => {
+                warn!("error while looking for cache: {}", e);
+            }
+        }
+
+        self.query_api(location, key).await
+    }
+
+    async fn query_api(&self, location: Location, key: String) -> Result<WeatherResponse, Error> {
         debug!("querying {:?}", location);
         let mut params = Vec::with_capacity(3);
         match &location {
@@ -103,7 +181,14 @@ impl WeatherClient {
         let resp: ApiResponse = serde_json::from_slice(&bytes)?;
 
         match resp {
-            ApiResponse::Success(w) => Ok(w),
+            ApiResponse::Success(w) => {
+                if self.cache_length.is_some() {
+                    if let Err(e) = self.write_cache(location, &bytes) {
+                        warn!("error while writing cached response: {}", e);
+                    }
+                }
+                Ok(w)
+            }
             ApiResponse::Other { cod, message } => {
                 if cod == "404" {
                     bail!("location error: '{}' for '{}'", message, location);

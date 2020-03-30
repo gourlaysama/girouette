@@ -9,6 +9,8 @@ pub struct ProgramConfig {
 
     pub location: Option<Location>,
 
+    pub cache: Option<String>,
+
     #[serde(flatten)]
     pub display_config: DisplayConfig,
 }
@@ -18,6 +20,7 @@ impl Default for ProgramConfig {
         ProgramConfig {
             key: None,
             location: None,
+            cache: None,
             display_config: DisplayConfig::default(),
         }
     }
