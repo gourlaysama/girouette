@@ -41,3 +41,4 @@ dual licensed as above, without any additional terms or conditions.
 
 [OpenWeather]: https://openweathermap.org
 [OpenWeather API key]: https://openweathermap.org/appid
+[Rust install]: https://www.rust-lang.org/tools/install
