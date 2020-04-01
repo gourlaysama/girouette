@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+
+## [0.3.0] - 2020-04-01
+
 ### Added
 
 * The new `-c/--cache <duration>` option will cache API responses and reuse them on following invocations,
@@ -61,7 +64,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/gourlaysama/girouette/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/gourlaysama/girouette/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/gourlaysama/girouette/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/gourlaysama/girouette/compare/e1ab692...v0.1.0
