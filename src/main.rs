@@ -1,5 +1,4 @@
 use anyhow::*;
-use directories::ProjectDirs;
 use girouette::{config::ProgramConfig, segments::*, WeatherClient};
 use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Serialize};
@@ -22,6 +21,9 @@ struct ProgramOptions {
 
     #[structopt(short, long)]
     cache: Option<String>,
+
+    #[structopt(long)]
+    clean_cache: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -44,7 +46,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn run_async() -> Result<()> {
-    let conf = make_config()?;
+    let options = ProgramOptions::from_args();
+
+    if options.clean_cache {
+        return WeatherClient::clean_cache();
+    }
+
+    let conf = make_config(&options)?;
 
     let resp = WeatherClient::new(conf.cache)
         .query(
@@ -66,16 +74,14 @@ async fn run_async() -> Result<()> {
     Ok(())
 }
 
-fn make_config() -> Result<ProgramConfig> {
-    let options = ProgramOptions::from_args();
-
+fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
     let mut empty = false;
     let mut conf = config::Config::default();
-    if let Some(path) = options.config {
+    if let Some(path) = &options.config {
         debug!("looking for config file '{}'", path.display());
         conf.merge(config::File::from(path.as_ref()))?;
         info!("using config from '{}'", path.canonicalize()?.display());
-    } else if let Some(p) = ProjectDirs::from("rs", "", "Girouette") {
+    } else if let Some(p) = WeatherClient::directories() {
         let f = p.config_dir().join("config.yml");
         debug!("looking for config file '{}'", f.display());
 
@@ -95,14 +101,14 @@ fn make_config() -> Result<ProgramConfig> {
         ))?;
     };
 
-    if let Some(key) = options.key {
-        conf.set("key", Some(key))?;
+    if let Some(key) = &options.key {
+        conf.set("key", Some(key.as_str()))?;
     };
-    if let Some(location) = options.location {
-        conf.set("location", Some(location))?;
+    if let Some(location) = &options.location {
+        conf.set("location", Some(location.as_str()))?;
     };
-    if let Some(cache) = options.cache {
-        conf.set("cache", Some(cache))?;
+    if let Some(cache) = &options.cache {
+        conf.set("cache", Some(cache.as_str()))?;
     }
 
     let conf: ProgramConfig = conf.try_into()?;

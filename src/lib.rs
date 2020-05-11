@@ -77,8 +77,23 @@ impl WeatherClient {
         }
     }
 
+    pub fn clean_cache() -> Result<()> {
+        if let Some(p) = WeatherClient::directories() {
+            let results = p.cache_dir().join("results");
+            if results.exists() {
+                std::fs::remove_dir_all(&results)?;
+                println!("Cleaned cache directory ({})", results.to_string_lossy());
+            }
+        }
+        Ok(())
+    }
+
+    pub fn directories() -> Option<ProjectDirs> {
+        ProjectDirs::from("rs", "", "Girouette")
+    }
+
     fn find_cache_for(&self, location: &Location) -> Result<std::path::PathBuf> {
-        if let Some(p) = ProjectDirs::from("rs", "", "Girouette") {
+        if let Some(p) = WeatherClient::directories() {
             let suffix = match location {
                 Location::LatLon(lat, lon) => format!("{}_{}", lat, lon),
                 Location::Place(p) => self.clean_up_for_path(&p),
