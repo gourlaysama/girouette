@@ -1,7 +1,7 @@
 use crate::{config::*, serde_utils::*};
 use crate::{response::Wind, DisplayMode, WeatherResponse, WindType};
+use anyhow::Result;
 use chrono::{FixedOffset, TimeZone, Utc};
-use failure::*;
 use log::*;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
@@ -35,11 +35,7 @@ impl Renderer {
         Renderer { display_config }
     }
 
-    pub fn render(
-        &mut self,
-        out: &mut StandardStream,
-        resp: &WeatherResponse,
-    ) -> Result<(), Error> {
+    pub fn render(&mut self, out: &mut StandardStream, resp: &WeatherResponse) -> Result<()> {
         if self.display_config.segments.is_empty() {
             warn!("there are not segments to display!");
             return Ok(());
@@ -93,7 +89,7 @@ impl Segment {
         base_style: &ColorSpec,
         display_mode: DisplayMode,
         resp: &WeatherResponse,
-    ) -> Result<RenderStatus, Error> {
+    ) -> Result<RenderStatus> {
         match self {
             Segment::Instant(i) => i.render(out, base_style, display_mode, resp),
             Segment::LocationName(i) => i.render(out, base_style, display_mode, resp),
@@ -136,7 +132,7 @@ impl Instant {
         _: &ColorSpec,
         _: DisplayMode,
         resp: &WeatherResponse,
-    ) -> Result<RenderStatus, Error> {
+    ) -> Result<RenderStatus> {
         let source_date = FixedOffset::east(resp.timezone).timestamp(resp.dt, 0);
 
         if let Some(ref style) = self.style {
@@ -167,7 +163,7 @@ impl LocationName {
         _: &ColorSpec,
         _: DisplayMode,
         resp: &WeatherResponse,
-    ) -> Result<RenderStatus, Error> {
+    ) -> Result<RenderStatus> {
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
@@ -213,7 +209,7 @@ impl Temperature {
         out: &mut StandardStream,
         temp: f32,
         base_style: &ColorSpec,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         match &self.style {
             ScaledColor::Scaled => {
                 let temp_idx = (temp.round() + 16f32).min(57f32).max(0f32) as usize;
@@ -243,7 +239,7 @@ impl Temperature {
         base_style: &ColorSpec,
         display_mode: DisplayMode,
         resp: &WeatherResponse,
-    ) -> Result<RenderStatus, Error> {
+    ) -> Result<RenderStatus> {
         let display_mode = self.display_mode.unwrap_or(display_mode);
 
         display_print!(out, display_mode, "\u{e350}", "T", "T");
@@ -411,7 +407,7 @@ impl WeatherIcon {
         _: &ColorSpec,
         display_mode: DisplayMode,
         resp: &WeatherResponse,
-    ) -> Result<RenderStatus, Error> {
+    ) -> Result<RenderStatus> {
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
@@ -470,7 +466,7 @@ impl WeatherDescription {
         _: &ColorSpec,
         _: DisplayMode,
         resp: &WeatherResponse,
-    ) -> Result<RenderStatus, Error> {
+    ) -> Result<RenderStatus> {
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
@@ -509,7 +505,7 @@ impl WindSpeed {
         wind: &Wind,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let (icons, fallback) = match display_mode {
             DisplayMode::Ascii => (WIND_DIR_ASCII, ""),
             DisplayMode::Unicode => (WIND_DIR_UNICODE, ""),
@@ -557,7 +553,7 @@ impl WindSpeed {
         base_style: &ColorSpec,
         display_mode: DisplayMode,
         resp: &WeatherResponse,
-    ) -> Result<RenderStatus, Error> {
+    ) -> Result<RenderStatus> {
         if let Some(w) = &resp.wind {
             self.display_wind(out, &w, base_style, display_mode)?;
             Ok(RenderStatus::Rendered)
@@ -583,7 +579,7 @@ impl Humidity {
         humidity: u8,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         display_print!(stdout, display_mode, "\u{e373}", "H", "H");
 
         match &self.style {
@@ -611,7 +607,7 @@ impl Humidity {
         base_style: &ColorSpec,
         display_mode: DisplayMode,
         resp: &WeatherResponse,
-    ) -> Result<RenderStatus, Error> {
+    ) -> Result<RenderStatus> {
         self.display_humidity(out, resp.main.humidity, base_style, display_mode)?;
 
         Ok(RenderStatus::Rendered)
@@ -633,7 +629,7 @@ impl Rain {
         base_style: &ColorSpec,
         display_mode: DisplayMode,
         resp: &WeatherResponse,
-    ) -> Result<RenderStatus, Error> {
+    ) -> Result<RenderStatus> {
         if let Some(r) = &resp.rain {
             if let Some(mm) = r.one_h.or(r.three_h) {
                 display_print!(out, display_mode, "\u{e371}", "\u{2614}", "R");
@@ -668,7 +664,7 @@ impl Pressure {
         pressure: u16,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         display_print!(stdout, display_mode, "\u{e372}", "P", "P");
 
         if let Some(ref style) = self.style {
@@ -687,7 +683,7 @@ impl Pressure {
         base_style: &ColorSpec,
         display_mode: DisplayMode,
         resp: &WeatherResponse,
-    ) -> Result<RenderStatus, Error> {
+    ) -> Result<RenderStatus> {
         self.display_pressure(out, resp.main.pressure, base_style, display_mode)?;
 
         Ok(RenderStatus::Rendered)

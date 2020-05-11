@@ -1,5 +1,5 @@
+use anyhow::*;
 use directories::ProjectDirs;
-use failure::*;
 use girouette::{config::ProgramConfig, segments::*, WeatherClient};
 use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Serialize};
@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(()) => 0,
             Err(e) => {
                 error!("{}", e);
-                for cause in e.as_fail().iter_causes() {
+                for cause in e.chain() {
                     info!("cause: {}", cause);
                 }
                 1
@@ -43,15 +43,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     })
 }
 
-async fn run_async() -> Result<(), Error> {
+async fn run_async() -> Result<()> {
     let conf = make_config()?;
 
     let resp = WeatherClient::new(conf.cache)
         .query(
             conf.location
-                .ok_or_else(|| failure::err_msg("no location to query"))?,
+                .ok_or_else(|| anyhow!("no location to query"))?,
             conf.key.ok_or_else(|| {
-                failure::err_msg(
+                anyhow!(
                     "no API key for OpenWeather was found
                    you can get a key over at https://openweathermap.org/appid",
                 )
@@ -66,7 +66,7 @@ async fn run_async() -> Result<(), Error> {
     Ok(())
 }
 
-fn make_config() -> Result<ProgramConfig, Error> {
+fn make_config() -> Result<ProgramConfig> {
     let options = ProgramOptions::from_args();
 
     let mut empty = false;

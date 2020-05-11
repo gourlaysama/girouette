@@ -198,17 +198,22 @@ pub(crate) mod segment_vec {
                             "humidity" => Segment::Humidity(Humidity::default()),
                             "rain" => Segment::Rain(Rain::default()),
                             "pressure" => Segment::Pressure(Pressure::default()),
-                            a => return Err(de::Error::unknown_variant(a, &[
-                                "instant",
-                                "location_name",
-                                "temperature",
-                                "weather_icon",
-                                "weather_description",
-                                "wind_speed",
-                                "humidity",
-                                "rain",
-                                "pressure"
-                                ])),
+                            a => {
+                                return Err(de::Error::unknown_variant(
+                                    a,
+                                    &[
+                                        "instant",
+                                        "location_name",
+                                        "temperature",
+                                        "weather_icon",
+                                        "weather_description",
+                                        "wind_speed",
+                                        "humidity",
+                                        "rain",
+                                        "pressure",
+                                    ],
+                                ))
+                            }
                         });
                     }
                 }

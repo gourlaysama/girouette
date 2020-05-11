@@ -3,8 +3,8 @@ pub mod response;
 pub mod segments;
 mod serde_utils;
 
+use anyhow::*;
 use directories::ProjectDirs;
-use failure::*;
 use log::*;
 use response::{ApiResponse, WeatherResponse};
 use serde::{Deserialize, Serialize};
@@ -77,7 +77,7 @@ impl WeatherClient {
         }
     }
 
-    fn find_cache_for(&self, location: &Location) -> Result<std::path::PathBuf, Error> {
+    fn find_cache_for(&self, location: &Location) -> Result<std::path::PathBuf> {
         if let Some(p) = ProjectDirs::from("rs", "", "Girouette") {
             let suffix = match location {
                 Location::LatLon(lat, lon) => format!("{}_{}", lat, lon),
@@ -111,7 +111,7 @@ impl WeatherClient {
         buf
     }
 
-    fn query_cache(&self, location: &Location) -> Result<Option<WeatherResponse>, Error> {
+    fn query_cache(&self, location: &Location) -> Result<Option<WeatherResponse>> {
         if let Some(ref cache_length) = self.cache_length {
             let duration = humantime::parse_duration(cache_length)?;
             let path = self.find_cache_for(&location)?;
@@ -132,7 +132,7 @@ impl WeatherClient {
         Ok(None)
     }
 
-    fn write_cache(&self, location: Location, bytes: &[u8]) -> Result<(), Error> {
+    fn write_cache(&self, location: Location, bytes: &[u8]) -> Result<()> {
         let path = self.find_cache_for(&location)?;
         debug!("writing cache for {}", location);
         std::fs::write(path, bytes)?;
@@ -140,7 +140,7 @@ impl WeatherClient {
         Ok(())
     }
 
-    pub async fn query(&self, location: Location, key: String) -> Result<WeatherResponse, Error> {
+    pub async fn query(&self, location: Location, key: String) -> Result<WeatherResponse> {
         match self.query_cache(&location) {
             Ok(Some(resp)) => return Ok(resp),
             Ok(None) => {}
@@ -152,7 +152,7 @@ impl WeatherClient {
         self.query_api(location, key).await
     }
 
-    async fn query_api(&self, location: Location, key: String) -> Result<WeatherResponse, Error> {
+    async fn query_api(&self, location: Location, key: String) -> Result<WeatherResponse> {
         debug!("querying {:?}", location);
         let mut params = Vec::with_capacity(3);
         match &location {
