@@ -131,16 +131,20 @@ impl WeatherClient {
             let duration = humantime::parse_duration(cache_length)?;
             let path = self.find_cache_for(&location)?;
 
-            let m = std::fs::metadata(&path)?;
-            let elapsed = m.modified()?.elapsed()?;
-            if elapsed <= duration {
-                let f = std::fs::File::open(&path)?;
-                if let ApiResponse::Success(resp) = serde_json::from_reader(f)? {
-                    info!("using cached response for {}", location);
-                    return Ok(Some(resp));
+            if path.exists() {
+                let m = std::fs::metadata(&path)?;
+                let elapsed = m.modified()?.elapsed()?;
+                if elapsed <= duration {
+                    let f = std::fs::File::open(&path)?;
+                    if let ApiResponse::Success(resp) = serde_json::from_reader(f)? {
+                        info!("using cached response for {}", location);
+                        return Ok(Some(resp));
+                    }
+                } else {
+                    info!("ignoring expired cached response for {}", location);
                 }
             } else {
-                info!("ignoring expired cached response for {}", location);
+                info!("no cached response found for {}", location);
             }
         }
 
