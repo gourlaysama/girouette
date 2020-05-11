@@ -36,7 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(()) => 0,
             Err(e) => {
                 error!("{}", e);
-                for cause in e.chain() {
+                for cause in e.chain().skip(1) {
                     info!("cause: {}", cause);
                 }
                 1
