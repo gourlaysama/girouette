@@ -1,0 +1,62 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    name: Publish binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: x86_64-unknown-linux-musl
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends musl-tools
+      - uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: -Ccodegen-units=1 -Clink-arg=-Wl,-z,relro
+        with:
+          command: build
+          args: --verbose --release --no-default-features --features static --target x86_64-unknown-linux-musl
+      - name: Prepare package
+        run: |
+          G_TAG=${{ github.ref }}
+          G_VERSION=${G_TAG#refs/tags/v}
+          DIST_DIR="girouette-$G_VERSION-x86_64-unknown-linux-musl"
+          TARGET_FILE="$DIST_DIR.tar.gz"
+          rm -rf "$DIST_DIR"
+          mkdir -p "$DIST_DIR"
+          cp -p target/x86_64-unknown-linux-musl/release/girouette "$DIST_DIR"
+          cp -p README.md "$DIST_DIR"
+          cp -p LICENSE-* "$DIST_DIR"
+          strip "$DIST_DIR/girouette"
+          tar -cf "$TARGET_FILE" "$DIST_DIR"
+          echo "::set-env name=G_ASSET::$TARGET_FILE"
+          echo "::set-env name=G_VERSION::$G_VERSION"
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: girouette ${{ env.G_VERSION }}
+          draft: true
+      - name: Upload to Github release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.G_ASSET }}
+          asset_name: ${{ env.G_ASSET }}
+          asset_content_type: application/gzip
