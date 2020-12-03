@@ -4,7 +4,7 @@ pub mod segments;
 mod serde_utils;
 
 use anyhow::*;
-use directories::ProjectDirs;
+use directories_next::ProjectDirs;
 use log::*;
 use response::{ApiResponse, WeatherResponse};
 use serde::{Deserialize, Serialize};
