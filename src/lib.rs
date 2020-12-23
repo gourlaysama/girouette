@@ -120,7 +120,7 @@ impl WeatherClient {
             buf.push_str(&value);
             current_part = parts.next();
             if current_part.is_some() {
-                buf.push_str("_");
+                buf.push('_');
             }
         }
         buf
