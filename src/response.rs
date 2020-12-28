@@ -2,7 +2,9 @@
 #[serde(untagged)]
 pub enum ApiResponse {
     Success(WeatherResponse),
-    Other { cod: String, message: String },
+    // hack: Openweather API returns some very ugly json
+    OtherInt { cod: u32, message: String },
+    OtherString { cod: String, message: String },
 }
 
 #[derive(serde::Deserialize, Debug)]

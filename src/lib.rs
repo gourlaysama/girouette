@@ -209,13 +209,21 @@ impl WeatherClient {
                 }
                 Ok(w)
             }
-            ApiResponse::Other { cod, message } => {
-                if cod == "404" {
-                    bail!("location error: '{}' for '{}'", message, location);
-                }
-                bail!("error from OpenWeather API: {}: {}", cod, message);
+            ApiResponse::OtherInt { cod, message } => {
+                handle_error(cod, &message, location)
+            }
+            ApiResponse::OtherString { cod, message } => {
+                handle_error(cod.parse().unwrap_or_default(), &message, location)
             }
         }
+    }
+}
+
+fn handle_error(error_code: u32, message: &str, location: Location) -> Result<WeatherResponse> {
+    match error_code {
+        404 => bail!("location error: '{}' for '{}'", message, location),
+        429 => bail!("Too many calls to the API! If you not using your own API key, please get your own for free over at http://openweathermap.org"),
+        _ => bail!("error from OpenWeather API: {}: {}", error_code, message),
     }
 }
 
