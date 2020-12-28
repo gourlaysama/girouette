@@ -2,7 +2,9 @@
 
 # OpenWeather API key
 #
-#key: "__replace_me__"
+# This is a default key for girouette. It is rate-limited, so
+# get a free API key over at https://openweathermap.org/
+key: "467cf0f1a1d612944d2da01c515c6f26"
 
 # Location to query
 #
