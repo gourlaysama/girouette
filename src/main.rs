@@ -101,15 +101,21 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
         ))?;
     };
 
-    if let Some(key) = &options.key {
-        conf.set("key", Some(key.as_str()))?;
-    };
-    if let Some(location) = &options.location {
-        conf.set("location", Some(location.as_str()))?;
-    };
-    if let Some(cache) = &options.cache {
-        conf.set("cache", Some(cache.as_str()))?;
+    fn set_conf_from_options(
+        conf: &mut config::Config,
+        option: &Option<String>,
+        key: &str,
+    ) -> Result<()> {
+        if let Some(value) = option {
+            conf.set(key, Some(value.as_str()))?;
+        }
+
+        Ok(())
     }
+
+    set_conf_from_options(&mut conf, &options.key, "key")?;
+    set_conf_from_options(&mut conf, &options.location, "location")?;
+    set_conf_from_options(&mut conf, &options.cache, "cache")?;
 
     let conf: ProgramConfig = conf.try_into()?;
     trace!("full config: {:#?}", conf);
