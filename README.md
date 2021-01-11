@@ -5,6 +5,8 @@ in the terminal.
 
 It supports ASCII, Unicode and Nerd Fonts output with full color output.
 
+![examples of girouette output](screenshots/girouette_main.png)
+
 girouette requires an [OpenWeather API key] (free for 1 call per second). A default key is hardcoded for people to try things, but it will get rate limited quickly.
 
 ![ci](https://github.com/gourlaysama/girouette/workflows/Continuous%20integration/badge.svg?branch=master)

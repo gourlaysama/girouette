@@ -1,0 +1,79 @@
+# Config file for girouette
+
+# OpenWeather API key
+#
+# This is a default key for girouette. It is rate-limited, so
+# get a free API key over at https://openweathermap.org/
+key: "467cf0f1a1d612944d2da01c515c6f26"
+
+# Location to query
+#
+#location = "Dubai"
+#location = "53.258,3.114"
+location: "Paris, FR"
+
+# Separator text between entries
+#
+# defaults to two whitespace charaters "  "
+#separator: " | "
+
+# Caching of API responses
+#
+# Value can be a duration ("1h", "2 days", "10min") or "none" to disable it
+cache: "1m"
+
+# Background style for the whole bar
+#
+# All other styles support the same options.
+# All colors can be either:
+#  - a color name (black, blue, green, red, cyan, magenta, yellow, white)
+#    example: "yellow"
+#  - an integer between 0 and 255 representing an ANSI color code
+#    example: 122
+#  - a triple of integer representing an RGB color
+#    example: [15, 55, 84]
+base_style:
+  bg: [0, 43, 54]
+  fg: [131, 148, 150]
+  # Bold text
+  #bold: false
+  # Intense text
+  #intense: false
+  # Underline text (not supported in all terminals)
+  #underline: false
+  # Italic text (not supported in all terminals)
+  #italic: false
+
+# Display mode supported by the terminal emulator:
+# - "ascii"
+#   Only use ASCII charaters. Icons will be very limited or even inexistant.
+#
+# - "unicode"
+#   Use standard Unicode characters. This will use the somewhat limited list of
+#   weather related icons in Unicode. This is the default.
+#
+# - "nerd_fonts"
+#   Use the weather icons provided as part of the Nerd Fonts package.
+#   The provides the most specific and best-looking icons for weather, but must
+#   be installed first.
+#
+display_mode: "unicode"
+
+# Segments to display
+segments:
+  - instant:
+      style:
+        fg: [147, 161, 161]
+      date_format: "%R"
+  - location_name:
+      style:
+        fg: [238, 232, 213]
+  - temperature
+  - weather_icon
+  - weather_description:
+      style:
+        fg: [238, 232, 213]
+  - rain:
+      style:
+        fg: [38, 139, 210]
+  - wind_speed
