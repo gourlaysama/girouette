@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* Release binaries are now published to the corresponding Github release.
 
 ## [0.3.1] - 2021-01-14
 
