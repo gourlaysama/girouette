@@ -89,6 +89,12 @@ girouette doesn't create a configuration file for you, but looks for it in the f
   * on MacOS in `$HOME/Library/Application Support/rs.Girouette/config.yml`
   * on Windows in `%AppData%\Girouette\config\config.yml`
 
+The `--print-default-config` option displays the content of the default config. It can be use to initialize a custom configuration file:
+
+```sh
+$ girouette --print-default-config > myconfig.yml
+```
+
 See the default configuration file [config.yml] and browse the [example_configs] directory for examples (the example output shown above displays the default and both example configurations).
 
 #### License

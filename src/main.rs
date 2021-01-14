@@ -27,7 +27,7 @@ struct ProgramOptions {
 
     #[structopt(long)]
     /// Use the specified configuration file instead of the default.
-    /// 
+    ///
     /// By default, girouette looks for a configuration file:
     ///
     /// - on Linux in "$XDG_CONFIG_HOME/girouette/config.yml" or "$HOME/.config/girouette/config.yml"
@@ -53,7 +53,15 @@ struct ProgramOptions {
     #[structopt(long)]
     /// Removes all cached responses and exits.
     clean_cache: bool,
+
+    #[structopt(long)]
+    /// Prints the contents of the default configuration and exits.
+    ///
+    /// This allows creating a new configuration using the default configuration as a template.
+    print_default_config: bool,
 }
+
+static DEFAULT_CONFIG: &str = include_str!("../config.yml");
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::try_init_custom_env("GIROUETTE_LOG")?;
@@ -79,6 +87,11 @@ async fn run_async() -> Result<()> {
 
     if options.clean_cache {
         return WeatherClient::clean_cache();
+    }
+
+    if options.print_default_config {
+        print!("{}", DEFAULT_CONFIG);
+        return Ok(());
     }
 
     let conf = make_config(&options)?;
@@ -125,7 +138,7 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
         warn!("no config file found, using fallback");
         // fallback config so that first users see something
         conf.merge(config::File::from_str(
-            include_str!("../config.yml"),
+            DEFAULT_CONFIG,
             config::FileFormat::Yaml,
         ))?;
     };

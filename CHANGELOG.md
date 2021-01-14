@@ -5,6 +5,10 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* New ``--print-default-config` option to print the content of the default configuration file.
+
 ### Fixed
 
 * Fixed parsing error that prevented passing on the CLI a location starting with a minus sign (negative latitude).
