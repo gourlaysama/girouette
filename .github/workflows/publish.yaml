@@ -40,8 +40,8 @@ jobs:
           cp -p LICENSE-* "$DIST_DIR"
           strip "$DIST_DIR/girouette"
           tar -cf "$TARGET_FILE" "$DIST_DIR"
-          echo "::set-env name=G_ASSET::$TARGET_FILE"
-          echo "::set-env name=G_VERSION::$G_VERSION"
+          echo "G_ASSET=$TARGET_FILE" >> $GITHUB_ENV
+          echo "G_VERSION=$G_VERSION" >> $GITHUB_ENV
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
