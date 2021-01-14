@@ -60,8 +60,7 @@ $ cargo build --release --no-default-features --features static --target x86_64-
 
         - on MacOS in "$HOME/Library/Application Support/rs.Girouette/config.yml"
 
-        - on Windows in "{FOLDERID_RoamingAppData}\Girouette\config\config.yml" (usually
-          "%HOME%\AppData\Roaming\Girouette\config\config.yml")
+        - on Windows in "%AppData%\Girouette\config\config.yml"
 -k, --key <key>              
         OpenWeather API key (required for anything more than light testing).
 
@@ -82,6 +81,15 @@ $ cargo build --release --no-default-features --features static --target x86_64-
         Prints version information
 
 ```
+
+## Configuration
+
+girouette doesn't create a configuration file for you, but looks for it in the following locations:
+  * on Linux in `$XDG_CONFIG_HOME/girouette/config.yml` or `$HOME/.config/girouette/config.yml`
+  * on MacOS in `$HOME/Library/Application Support/rs.Girouette/config.yml`
+  * on Windows in `%AppData%\Girouette\config\config.yml`
+
+See the default configuration file [config.yml] and browse the [example_configs] directory for examples (the example output shown above displays the default and both example configurations).
 
 #### License
 

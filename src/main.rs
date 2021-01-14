@@ -34,7 +34,7 @@ struct ProgramOptions {
     ///
     /// - on MacOS in "$HOME/Library/Application Support/rs.Girouette/config.yml"
     ///
-    /// - on Windows in "{FOLDERID_RoamingAppData}\Girouette\config\config.yml" (usually "%HOME%\AppData\Roaming\Girouette\config\config.yml")
+    /// - on Windows in "%AppData%\Girouette\config\config.yml"
     config: Option<PathBuf>,
 
     #[structopt(short, long)]
