@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Fixed
+
+* Fixed parsing error that prevented passing on the CLI a location starting with a minus sign (negative latitude).
 
 ## [0.3.2] - 2021-01-14
 

@@ -13,7 +13,7 @@ struct ProgramOptions {
     #[structopt(short, long)]
     key: Option<String>,
 
-    #[structopt(short, long)]
+    #[structopt(short, long, allow_hyphen_values(true))]
     location: Option<String>,
 
     #[structopt(long)]
