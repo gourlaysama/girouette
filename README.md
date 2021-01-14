@@ -11,7 +11,11 @@ girouette requires an [OpenWeather API key] (free for 1 call per second). A defa
 
 ![ci](https://github.com/gourlaysama/girouette/workflows/Continuous%20integration/badge.svg?branch=master)
 
-## Install
+## Installation
+
+Binaries are available on the [Release Page] for x86_64 Linux (statically linked).
+
+## Building from source
 
 girouette is written in Rust, so you need a [Rust install] to build it. girouette compiles with
 Rust 1.42 or newer.
@@ -24,6 +28,13 @@ $ cd girouette
 $ cargo build --release
 $ ./target/release/girouette --version
 girouette 0.3.2
+```
+
+You can also build a fully static linux binary using the MUSL libc:
+
+```sh
+$ rustup target add x86_64-unknown-linux-musl # run this only once
+$ cargo build --release --no-default-features --features static --target x86_64-unknown-linux-musl
 ```
 
 
@@ -44,3 +55,4 @@ dual licensed as above, without any additional terms or conditions.
 [OpenWeather]: https://openweathermap.org
 [OpenWeather API key]: https://openweathermap.org/appid
 [Rust install]: https://www.rust-lang.org/tools/install
+[Release Page]: https://github.com/gourlaysama/girouette/releases/latest
