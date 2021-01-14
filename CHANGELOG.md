@@ -5,6 +5,18 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* Trying girouette without registering an OpenWeather API key is now possible (using an hardcoded key).
+* New `--clean-cache` option to empty the cache used when API responses are cached to disk.
+
+### Changed
+
+* Responses are now cached by default for one minute (the `cache` key in the default config is set to `1m`).
+
+### Fixed
+
+* Never return an error if a response is not in cache, just query the API instead.
 
 ## [0.3.0] - 2020-04-01
 
