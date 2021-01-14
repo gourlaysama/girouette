@@ -37,6 +37,51 @@ $ rustup target add x86_64-unknown-linux-musl # run this only once
 $ cargo build --release --no-default-features --features static --target x86_64-unknown-linux-musl
 ```
 
+## Options
+
+```
+-c, --cache <cache>          
+        Cache responses for this long (e.g. "1m", "2 days 6h", "5 sec").
+
+        If there is a cached response younger than the duration given as argument, it  is returned directly.
+        Otherwise, it queries the API and write the response to the cache for use by a later invocation.
+
+        NOTE: No response is written to the cache if this option isn't set. The invocation doing the caching and the
+        one potentially querying it *both* need this option set.
+
+        Recognized durations go from seconds ("seconds, second, sec, s") to years ("years, year, y"). This option
+        overrides the corresponding value from the config.
+    --config <config>        
+        Use the specified configuration file instead of the default.
+
+        By default, girouette looks for a configuration file:
+
+        - on Linux in "$XDG_CONFIG_HOME/girouette/config.yml" or "$HOME/.config/girouette/config.yml"
+
+        - on MacOS in "$HOME/Library/Application Support/rs.Girouette/config.yml"
+
+        - on Windows in "{FOLDERID_RoamingAppData}\Girouette\config\config.yml" (usually
+          "%HOME%\AppData\Roaming\Girouette\config\config.yml")
+-k, --key <key>              
+        OpenWeather API key (required for anything more than light testing).
+
+        This option overrides the corresponding value from the config.
+-l, --location <location>    
+        Location to query (required if not set in config).
+
+        Possible values are: * Location names: "London, UK", "Dubai" * Geographic coordinates (lat,lon): "" This
+        option overrides the corresponding value from the config.
+
+    --clean-cache    
+        Removes all cached responses and exits
+
+-h, --help           
+        Prints help information
+
+-V, --version        
+        Prints version information
+
+```
 
 #### License
 

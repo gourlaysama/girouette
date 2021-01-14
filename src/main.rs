@@ -10,19 +10,48 @@ use tokio::runtime::Runtime;
 #[derive(StructOpt, Debug, Serialize, Deserialize)]
 #[structopt(about = "Display the current weather using the Openweather API.")]
 struct ProgramOptions {
+    /// OpenWeather API key (required for anything more than light testing).
+    ///
+    /// This option overrides the corresponding value from the config.
     #[structopt(short, long)]
     key: Option<String>,
 
     #[structopt(short, long, allow_hyphen_values(true))]
+    /// Location to query (required if not set in config).
+    ///
+    /// Possible values are:
+    ///   * Location names: "London, UK", "Dubai"
+    ///   * Geographic coordinates (lat,lon): ""
+    /// This option overrides the corresponding value from the config.
     location: Option<String>,
 
     #[structopt(long)]
+    /// Use the specified configuration file instead of the default.
+    /// 
+    /// By default, girouette looks for a configuration file:
+    ///
+    /// - on Linux in "$XDG_CONFIG_HOME/girouette/config.yml" or "$HOME/.config/girouette/config.yml"
+    ///
+    /// - on MacOS in "$HOME/Library/Application Support/rs.Girouette/config.yml"
+    ///
+    /// - on Windows in "{FOLDERID_RoamingAppData}\Girouette\config\config.yml" (usually "%HOME%\AppData\Roaming\Girouette\config\config.yml")
     config: Option<PathBuf>,
 
     #[structopt(short, long)]
+    /// Cache responses for this long (e.g. "1m", "2 days 6h", "5 sec").
+    ///
+    /// If there is a cached response younger than the duration given as argument, it  is returned directly.
+    /// Otherwise, it queries the API and write the response to the cache for use by a later invocation.
+    ///
+    /// NOTE: No response is written to the cache if this option isn't set. The invocation doing the caching and
+    /// the one potentially querying it *both* need this option set.
+    ///
+    /// Recognized durations go from seconds ("seconds, second, sec, s") to years ("years, year, y").
+    /// This option overrides the corresponding value from the config.
     cache: Option<String>,
 
     #[structopt(long)]
+    /// Removes all cached responses and exits.
     clean_cache: bool,
 }
 
