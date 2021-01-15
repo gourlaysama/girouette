@@ -52,6 +52,16 @@ struct ProgramOptions {
 
     #[structopt(long)]
     /// Removes all cached responses and exits.
+    ///
+    /// This empties the cache directory used when caching reponses with "-c/--cache".
+    ///
+    /// By default, girouette puts the cache in:
+    ///
+    /// - on Linux in "$XDG_CACHE_HOME/girouette/results/" or "$HOME/.cache/girouette/results/"
+    ///
+    /// - on MacOS in "$HOME/Library/Caches/rs.Girouette/results/"
+    ///
+    /// - on Windows in "%AppData%\Girouette\cache\results\"
     clean_cache: bool,
 
     #[structopt(long)]

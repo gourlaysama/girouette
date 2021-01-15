@@ -51,35 +51,46 @@ $ cargo build --release --no-default-features --features static --target x86_64-
 
         Recognized durations go from seconds ("seconds, second, sec, s") to years ("years, year, y"). This option
         overrides the corresponding value from the config.
+
     --config <config>        
         Use the specified configuration file instead of the default.
 
         By default, girouette looks for a configuration file:
 
         - on Linux in "$XDG_CONFIG_HOME/girouette/config.yml" or "$HOME/.config/girouette/config.yml"
-
         - on MacOS in "$HOME/Library/Application Support/rs.Girouette/config.yml"
-
         - on Windows in "%AppData%\Girouette\config\config.yml"
+
 -k, --key <key>              
         OpenWeather API key (required for anything more than light testing).
 
         This option overrides the corresponding value from the config.
+
 -l, --location <location>    
         Location to query (required if not set in config).
 
         Possible values are: * Location names: "London, UK", "Dubai" * Geographic coordinates (lat,lon): "" This
         option overrides the corresponding value from the config.
 
-    --clean-cache    
-        Removes all cached responses and exits
+    --clean-cache
+        Removes all cached responses and exits.
+
+        This empties the cache directory used when caching reponses with "-c/--cache".
+
+        By default, girouette puts the cache in:
+
+        - on Linux in "$XDG_CACHE_HOME/girouette/results/" or "$HOME/.cache/girouette/results/"
+        - on MacOS in "$HOME/Library/Caches/rs.Girouette/results/"
+        - on Windows in "%AppData%\Girouette\cache\results\"
+
+    --print-default-config    
+        Prints the contents of the default configuration and exits.
 
 -h, --help           
-        Prints help information
+        Prints help information.
 
 -V, --version        
-        Prints version information
-
+        Prints version information.
 ```
 
 ## Configuration
