@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use structopt::StructOpt;
 use termcolor::*;
-use tokio::runtime::Runtime;
+use tokio::runtime;
 
 #[derive(StructOpt, Debug, Serialize, Deserialize)]
 #[structopt(about = "Display the current weather using the Openweather API.")]
@@ -66,7 +66,7 @@ static DEFAULT_CONFIG: &str = include_str!("../config.yml");
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::try_init_custom_env("GIROUETTE_LOG")?;
 
-    let mut rt = Runtime::new()?;
+    let rt = runtime::Builder::new_current_thread().enable_io().build()?;
 
     std::process::exit({
         match rt.block_on(run_async()) {

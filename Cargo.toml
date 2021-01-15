@@ -15,7 +15,7 @@ termcolor = '1.1'
 serde_json = '1'
 
 [dependencies.reqwest]
-version = '0.10'
+version = '0.11'
 default-features = false
 
 # use rusttls when building a static executable:
@@ -39,8 +39,8 @@ version = '1'
 features = ['derive']
 
 [dependencies.tokio]
-version = '0.2'
-features = ['rt-core']
+version = '1'
+features = ['rt']
 
 [profile.release]
 lto = true
