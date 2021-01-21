@@ -7,7 +7,9 @@
 
 ### Added
 
-* New ``--print-default-config` option to print the content of the default configuration file.
+* New `--print-default-config` option to print the content of the default configuration file.
+* New `auto` value for `-l/--location`: girouette will use geoclue (and thus dbus) to find the location.
+  This is the default if there is no location set in the config file.
 
 ### Fixed
 

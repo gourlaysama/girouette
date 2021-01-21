@@ -34,7 +34,7 @@ You can also build a fully static linux binary using the MUSL libc:
 
 ```sh
 $ rustup target add x86_64-unknown-linux-musl # run this only once
-$ cargo build --release --no-default-features --features static --target x86_64-unknown-linux-musl
+$ cargo build --release --no-default-features --features default-static --target x86_64-unknown-linux-musl
 ```
 
 ## Options

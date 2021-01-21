@@ -26,7 +26,7 @@ jobs:
           RUSTFLAGS: -Ccodegen-units=1 -Clink-arg=-Wl,-z,relro
         with:
           command: build
-          args: --verbose --release --no-default-features --features static --target x86_64-unknown-linux-musl
+          args: --verbose --release --no-default-features --features default-static --target x86_64-unknown-linux-musl
       - name: Prepare package
         run: |
           G_TAG=${{ github.ref }}

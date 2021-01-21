@@ -1,6 +1,8 @@
 pub mod config;
 pub mod response;
 pub mod segments;
+#[cfg(feature = "geoclue")]
+pub mod geoclue;
 mod serde_utils;
 
 use anyhow::*;

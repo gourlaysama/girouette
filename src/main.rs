@@ -1,5 +1,5 @@
 use anyhow::*;
-use girouette::{config::ProgramConfig, segments::*, WeatherClient};
+use girouette::{config::ProgramConfig, segments::*, Location, WeatherClient};
 use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -76,7 +76,9 @@ static DEFAULT_CONFIG: &str = include_str!("../config.yml");
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     pretty_env_logger::try_init_custom_env("GIROUETTE_LOG")?;
 
-    let rt = runtime::Builder::new_current_thread().enable_io().build()?;
+    let rt = runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()?;
 
     std::process::exit({
         match rt.block_on(run_async()) {
@@ -106,10 +108,16 @@ async fn run_async() -> Result<()> {
 
     let conf = make_config(&options)?;
 
+    let location = match conf.location {
+        Some(loc) => Ok(loc),
+        None => {
+            find_location().await
+        },
+    }.map_err(|e| anyhow!("failed to find location to query: {}", e))?;
+
     let resp = WeatherClient::new(conf.cache)
         .query(
-            conf.location
-                .ok_or_else(|| anyhow!("no location to query"))?,
+            location,
             conf.key.ok_or_else(|| {
                 anyhow!(
                     "no API key for OpenWeather was found
@@ -124,6 +132,18 @@ async fn run_async() -> Result<()> {
     renderer.render(&mut stdout, &resp)?;
 
     Ok(())
+}
+
+#[cfg(feature = "geoclue")]
+async fn find_location() -> Result<Location> {
+    info!("no location to query, trying geoclue");
+    girouette::geoclue::get_location().await
+}
+
+#[cfg(not(feature = "geoclue"))]
+async fn find_location() -> Result<Location> {
+    info!("no location to query, trying geoclue");
+    bail!("no support for geoclue")
 }
 
 fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
@@ -175,6 +195,16 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
             conf.set::<Option<String>>("cache", None)?;
         }
     }
+
+    // location: auto means the same as empty (use geoclue)
+    match conf.get::<Option<Location>>("location").unwrap_or(None) {
+        Some(Location::Place(loc)) if loc == "auto" => {
+            // we use string here since Location isn't serializable into the config
+            // but it doesn't matter for setting the Option to None
+            conf.set::<Option<String>>("location", None)?;
+        }
+        _ => {}
+    };
 
     let conf: ProgramConfig = conf.try_into()?;
     trace!("full config: {:#?}", conf);
