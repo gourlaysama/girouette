@@ -8,6 +8,9 @@ on:
 
 name: Continuous integration
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   check:
     name: Check
@@ -19,6 +22,10 @@ jobs:
           - 1.45.0 # Rust MSRV
     steps:
       - uses: actions/checkout@v2
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libdbus-1-dev
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -38,6 +45,10 @@ jobs:
           - 1.45.0 # Rust MSRV
     steps:
       - uses: actions/checkout@v2
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libdbus-1-dev
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
