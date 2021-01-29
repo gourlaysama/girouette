@@ -18,7 +18,7 @@ Binaries are available on the [Release Page] for x86_64 Linux (statically linked
 ## Building from source
 
 girouette is written in Rust, so you need a [Rust install] to build it. girouette compiles with
-Rust 1.45 or newer.
+Rust 1.48 or newer.
 
 Build the latest release (0.3.2) from source with:
 
