@@ -20,14 +20,14 @@ Binaries are available on the [Release Page] for x86_64 Linux (statically linked
 girouette is written in Rust, so you need a [Rust install] to build it. girouette compiles with
 Rust 1.48 or newer.
 
-Build the latest release (0.3.2) from source with:
+Build the latest release (0.4.0) from source with:
 
 ```sh
-$ git clone https://github.com/gourlaysama/girouette -b v0.3.2
+$ git clone https://github.com/gourlaysama/girouette -b v0.4.0
 $ cd girouette
 $ cargo build --release
 $ ./target/release/girouette --version
-girouette 0.3.2
+girouette 0.4.0
 ```
 
 You can also build a fully static linux binary using the MUSL libc:

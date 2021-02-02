@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+
+## [0.4.0] - 2021-02-02
+
 ### Added
 
 * New `--print-default-config` option to print the content of the default configuration file.
@@ -94,7 +97,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/gourlaysama/girouette/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/gourlaysama/girouette/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/gourlaysama/girouette/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/gourlaysama/girouette/compare/v0.2.1...v0.3.0
