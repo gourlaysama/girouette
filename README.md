@@ -9,16 +9,31 @@ It supports ASCII, Unicode and Nerd Fonts output with full color output.
 
 girouette requires an [OpenWeather API key] (free for 1 call per second). A default key is hardcoded for people to try things, but it will get rate limited quickly.
 
-![ci](https://github.com/gourlaysama/girouette/workflows/Continuous%20integration/badge.svg?branch=master)
+[![ci status][ci image]][ci link]
 
 ## Installation
 
 Binaries are available on the [Release Page] for x86_64 Linux (statically linked).
 
+## Usage
+
+Show the weather at a location:
+
+```sh
+$ girouette -l "Los Angeles"
+$ girouette -l "35.68,139.69"
+$ girouette -l auto  # if built with geoclue support (not available in static build)
+```
+
+The location can be set and the ouput customized in the [configuration file](#configuration).
+
 ## Building from source
 
 girouette is written in Rust, so you need a [Rust install] to build it. girouette compiles with
 Rust 1.48 or newer.
+
+Building a dynamically-linked girouette (the default) also requires dbus and openssl 
+(`libdbus-1-dev` and `libssl-dev` on Ubuntu, `dbus-devel` and `openssl-devel` on Fedora).
 
 Build the latest release (0.4.0) from source with:
 
@@ -30,7 +45,8 @@ $ ./target/release/girouette --version
 girouette 0.4.0
 ```
 
-You can also build a fully static linux binary using the MUSL libc:
+You can also build a fully static linux binary using the MUSL libc. After installing musl 
+(`musl-tools` on Ubuntu, `musl-libc-static` on Fedora), run:
 
 ```sh
 $ rustup target add x86_64-unknown-linux-musl # run this only once
@@ -126,3 +142,5 @@ dual licensed as above, without any additional terms or conditions.
 [OpenWeather API key]: https://openweathermap.org/appid
 [Rust install]: https://www.rust-lang.org/tools/install
 [Release Page]: https://github.com/gourlaysama/girouette/releases/latest
+[ci image]: https://github.com/gourlaysama/girouette/workflows/Continuous%20integration/badge.svg?branch=master
+[ci link]: https://github.com/gourlaysama/girouette/actions?query=workflow%3A%22Continuous+integration%22
