@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* Shell completions for girouette are now provided (for bash, zsh and fish).
 
 ## [0.4.0] - 2021-02-02
 
