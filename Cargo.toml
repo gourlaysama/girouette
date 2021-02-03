@@ -37,12 +37,21 @@ version = '0.3'
 default-features = false
 features = ['suggestions']
 
+[build-dependencies.structopt]
+version = '0.3'
+default-features = false
+features = ['suggestions']
+
 [dependencies.config]
 version = '0.10'
 default-features = false
 features = ['yaml']
 
 [dependencies.serde]
+version = '1'
+features = ['derive']
+
+[build-dependencies.serde]
 version = '1'
 features = ['derive']
 
