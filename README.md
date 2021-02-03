@@ -42,14 +42,14 @@ Rust 1.48 or newer.
 Building a dynamically-linked girouette (the default) also requires dbus and openssl 
 (`libdbus-1-dev` and `libssl-dev` on Ubuntu, `dbus-devel` and `openssl-devel` on Fedora).
 
-Build the latest release (0.4.0) from source with:
+Build the latest release (0.4.1) from source with:
 
 ```sh
-$ git clone https://github.com/gourlaysama/girouette -b v0.4.0
+$ git clone https://github.com/gourlaysama/girouette -b v0.4.1
 $ cd girouette
 $ cargo build --release
 $ ./target/release/girouette --version
-girouette 0.4.0
+girouette 0.4.1
 ```
 
 You can also build a fully static linux binary using the MUSL libc. After installing musl 

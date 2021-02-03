@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+
+## [0.4.1] - 2021-02-03
+
 ### Added
 
 * Shell completions for girouette are now provided (for bash, zsh and fish).
@@ -100,7 +103,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/gourlaysama/girouette/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/gourlaysama/girouette/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/gourlaysama/girouette/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/gourlaysama/girouette/compare/v0.3.0...v0.3.1
