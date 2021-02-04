@@ -22,6 +22,8 @@ sudo dnf copr enable gourlaysama/girouette
 sudo dnf install girouette
 ```
 
+Otherwise you well need to [build from source](#building-from-source).
+
 ## Usage
 
 Show the weather at a location:
@@ -65,7 +67,8 @@ $ ./target/x86_64-unknown-linux-musl/release/girouette
 
 ```
 -c, --cache <cache>          
-        Cache responses for this long (e.g. "1m", "2 days 6h", "5 sec").
+        Cache responses for this long (e.g. "1m", "2 days 6h", "5 sec"), or `none` to
+        disable it.
 
         If there is a cached response younger than the duration given as argument, it 
         is returned directly. Otherwise, it queries the API and write the response to
@@ -97,9 +100,10 @@ $ ./target/x86_64-unknown-linux-musl/release/girouette
 -l, --location <location>    
         Location to query (required if not set in config).
 
-        Possible values are: * Location names: "London, UK", "Dubai" * Geographic
-        coordinates (lat,lon): "" This option overrides the corresponding value from
-        the config.
+        Possible values are: 
+        * Location names: "London, UK", "Dubai"
+        * Geographic coordinates (lat,lon): "35.68,139.69" This option overrides
+          the corresponding value from the config.
 
     --clean-cache
         Removes all cached responses and exits.
@@ -125,10 +129,13 @@ $ ./target/x86_64-unknown-linux-musl/release/girouette
 
 ## Configuration
 
+### Configuration file location
+
 girouette doesn't create a configuration file for you, but looks for it in the following locations:
-  * on Linux in `$XDG_CONFIG_HOME/girouette/config.yml` or `$HOME/.config/girouette/config.yml`
-  * on MacOS in `$HOME/Library/Application Support/rs.Girouette/config.yml`
-  * on Windows in `%AppData%\Girouette\config\config.yml`
+
+* on Linux in `$XDG_CONFIG_HOME/girouette/config.yml` or `$HOME/.config/girouette/config.yml`
+* on MacOS in `$HOME/Library/Application Support/rs.Girouette/config.yml`
+* on Windows in `%AppData%\Girouette\config\config.yml`
 
 The `--print-default-config` option displays the content of the default config. It can be use to initialize a custom configuration file:
 
@@ -136,7 +143,56 @@ The `--print-default-config` option displays the content of the default config. 
 $ girouette --print-default-config > myconfig.yml
 ```
 
-See the default configuration file [config.yml] and browse the [example_configs] directory for examples (the example output shown above displays the default and both example configurations).
+### Global configuration keys
+
+* `key` (string): the OpenWeather API key to use (can be overriden on the command-line with `-k/--key`). Registering a key is required for anything more than light testing.
+* `location` (string): a default location to query (can be overriden on the command-line with `-l/--location`). 
+  * If built with geolocalization support (`geoclue` feature), can be `auto` or left empty to attempt geolocalization.
+  * Can be any name of a place.
+  * Can be a tuple of latitude, longitude (e.g. `"35.68,139.69"`)
+* `separator` (string): a separator string to use between segments. Defaults to two whitespace characters `"  "`.
+* `cache` (string): how long to cache responses from the API (can be overriden on the command-line with `-c/--cache`), or `none` to disable it.
+  If there is a cached response younger than the duration given as argument, it is returned directly. Otherwise, it queries the API and write the response to the cache for use by a later invocation.
+  NOTE: No response is written to the cache if this option isn't set. The invocation doing the caching and the one potentially querying it *both* need this option set.
+  Recognized durations go from seconds ("seconds, second, sec, s") to years ("years, year, y").
+
+
+See the default configuration file [config.yml](config.yml) and browse the [example_configs](example_configs/) directory for examples (the example output shown above displays the default and both example configurations).
+
+### Style configuration keys
+
+* `base_style` (style): the default style for the whole output. This is used as the style to render the separator around the segments, and as the parent style for the segments themselves. Individual segments only need to override the specific things they want to change (e.g. the foreground color), leaving the rest intact.
+* `display_mode` (string): what kind of characters to use in the output. Three values are possible:
+  * `ascii`: only use ASCII characters. Icons will be very limited or even inexistant. Will display fine on any terminal emulator.
+  * `unicode`: use standard Unicode characters. This will use the somewhat limited list of weather-related icons in Unicode. This is the default.
+    Note that most of these icons are emoji and their rendering in a terminal emulator will depend on the font, font fallbacks, and so on. Terminal emulators will also usually ignore the foreground color when emoji are not rendered "text-style".
+  * `nerd_fonts`: use characters from the Nerd Fonts package. These provide the most specific and best-looking icons for weather, but the Nerd Font variant of your font must be [installed][Nerd Fonts] first (and your terminal emulator configured to use it).
+* `segments` (list of segments): the list of information segments to display. Each segment contains an optional `style` attribute (described below) in addition to their own attributes.
+  Available segments:
+  * `instant`: the date/time of the weather measure. Has a single attribute:
+    * `date_format` (string): how to format the date/time. Takes a [mostly C-style format][chrono format].
+  * `location_name` (string): the location name from the weather mesure. This isn't always the same as the queried location.
+  * `temperature`: the temperature. The `style` attribute takes an additional `scaled` value to use an (hardcoded) color scale that varies with the temperature (this is the default). Has a single attribute:
+    * `feels_like` (boolean): if yes, also displays the (estimated) felt-like temperature (takes into account wind/humidity/...).
+  * `weather_icon`: a single icon summarizing the weather.
+  * `weather_description`: a textual description of the weather.
+  * `rain`: the amount of falling rain (if any).
+  * `wind_speed`: the measured wind speed.
+  * `humidity`: the measured humidity.
+  * `pressure`: the measured pressure.
+
+A style attribute is an object with 6 attributes, all optional:
+* `bg` (color): the background color.
+* `fg` (color): the foreground color.
+* `bold` (boolean): if yes, render the text bold.
+* `intense` (boolean): if yes, mark the text as intense. Terminal support varies.
+* `underline` (boolean): if yes, mark the text as underlined. Terminal support varies.
+* `italic` (boolean): if yes, mark the text as italic. Terminal support varies.
+
+A color attribute used in styles can be either:
+* a string containing a color name (black, blue, green, red, cyan, magenta, yellow, white),
+* a integer between 0 and 255 representing an ANSI color code (e.g. `122`),
+* a triple of integer representing an RGB color (e.g. `[15, 55, 84]`).
 
 #### License
 
@@ -158,3 +214,5 @@ dual licensed as above, without any additional terms or conditions.
 [Release Page]: https://github.com/gourlaysama/girouette/releases/latest
 [ci image]: https://github.com/gourlaysama/girouette/workflows/Continuous%20integration/badge.svg?branch=master
 [ci link]: https://github.com/gourlaysama/girouette/actions?query=workflow%3A%22Continuous+integration%22
+[Nerd Fonts]: https://www.nerdfonts.com/
+[chrono format]: https://docs.rs/chrono/0.4.19/chrono/format/strftime/index.html#specifiers

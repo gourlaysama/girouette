@@ -16,7 +16,7 @@ pub struct ProgramOptions {
     ///
     /// Possible values are:
     ///   * Location names: "London, UK", "Dubai"
-    ///   * Geographic coordinates (lat,lon): ""
+    ///   * Geographic coordinates (lat,lon): "35.68,139.69"
     /// This option overrides the corresponding value from the config.
     pub location: Option<String>,
 
@@ -33,7 +33,7 @@ pub struct ProgramOptions {
     pub config: Option<PathBuf>,
 
     #[structopt(short, long)]
-    /// Cache responses for this long (e.g. "1m", "2 days 6h", "5 sec").
+    /// Cache responses for this long (e.g. "1m", "2 days 6h", "5 sec"), or `none` to disable it.
     ///
     /// If there is a cached response younger than the duration given as argument, it  is returned directly.
     /// Otherwise, it queries the API and write the response to the cache for use by a later invocation.
