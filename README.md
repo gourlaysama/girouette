@@ -3,7 +3,11 @@
 **girouette** is a command line tool that displays the current weather (from [OpenWeather])
 in the terminal.
 
-It supports ASCII, Unicode and Nerd Fonts output with full color output.
+It supports advanced fonts like Nerd Fonts with full color output:
+
+![example of styled girouette output](screenshots/girouette_tests.png)
+
+And customizable output segments, including fallback to 16/256-color and simpler ASCII/Unicode support:
 
 ![examples of girouette output](screenshots/girouette_main.png)
 
@@ -22,7 +26,7 @@ sudo dnf copr enable gourlaysama/girouette
 sudo dnf install girouette
 ```
 
-Otherwise you well need to [build from source](#building-from-source).
+Otherwise you will need to [build from source](#building-from-source).
 
 ## Usage
 
@@ -41,7 +45,7 @@ The location can be set and the ouput customized in the [configuration file](#co
 girouette is written in Rust, so you need a [Rust install] to build it. girouette compiles with
 Rust 1.48 or newer.
 
-Building a dynamically-linked girouette (the default) also requires dbus and openssl 
+Building a dynamically-linked girouette (the default) also requires dbus (for geolocalization support) and openssl 
 (`libdbus-1-dev` and `libssl-dev` on Ubuntu, `dbus-devel` and `openssl-devel` on Fedora).
 
 Build the latest release (0.4.1) from source with:
@@ -52,6 +56,12 @@ $ cd girouette
 $ cargo build --release
 $ ./target/release/girouette --version
 girouette 0.4.1
+```
+
+You can disable geolocalization (and the need for dbus and geoclue) by building instead with:
+
+```sh
+$ cargo build --release --no-default-features --features dynamic
 ```
 
 You can also build a fully static linux binary using the MUSL libc. After installing musl 
