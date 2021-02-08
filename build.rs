@@ -11,21 +11,9 @@ fn main() {
     };
     let mut app = ProgramOptions::clap();
 
-    app.gen_completions(
-        "girouette",
-        Shell::Bash,
-        &outdir,
-    );
+    app.gen_completions("girouette", Shell::Bash, &outdir);
 
-    app.gen_completions(
-        "girouette",
-        Shell::Zsh,
-        &outdir,
-    );
+    app.gen_completions("girouette", Shell::Zsh, &outdir);
 
-    app.gen_completions(
-        "girouette",
-        Shell::Fish,
-        outdir,
-    );
+    app.gen_completions("girouette", Shell::Fish, outdir);
 }

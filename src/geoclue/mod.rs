@@ -51,11 +51,11 @@ pub async fn get_location() -> Result<Location> {
 
     client.start().await?;
 
-    let res: (_, OrgFreedesktopGeoClue2ClientLocationUpdated) = timeout(
-        Duration::from_secs(1),
-        stream.next(),
-    ).await.map_err(|_| anyhow!("location not found within one second"))?
-    .ok_or_else(|| anyhow!("no location"))?;
+    let res: (_, OrgFreedesktopGeoClue2ClientLocationUpdated) =
+        timeout(Duration::from_secs(1), stream.next())
+            .await
+            .map_err(|_| anyhow!("location not found within one second"))?
+            .ok_or_else(|| anyhow!("no location"))?;
 
     conn.remove_match(incoming.token()).await?;
 

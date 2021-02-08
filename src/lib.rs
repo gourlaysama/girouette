@@ -1,9 +1,9 @@
 pub mod cli;
 pub mod config;
-pub mod response;
-pub mod segments;
 #[cfg(feature = "geoclue")]
 pub mod geoclue;
+pub mod response;
+pub mod segments;
 mod serde_utils;
 
 use anyhow::*;
@@ -212,9 +212,7 @@ impl WeatherClient {
                 }
                 Ok(w)
             }
-            ApiResponse::OtherInt { cod, message } => {
-                handle_error(cod, &message, location)
-            }
+            ApiResponse::OtherInt { cod, message } => handle_error(cod, &message, location),
             ApiResponse::OtherString { cod, message } => {
                 handle_error(cod.parse().unwrap_or_default(), &message, location)
             }
