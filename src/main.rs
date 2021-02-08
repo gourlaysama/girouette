@@ -43,11 +43,9 @@ async fn run_async() -> Result<()> {
     let conf = make_config(&options)?;
 
     let location = match conf.location {
-        Some(loc) => Ok(loc),
-        None => {
-            find_location().await
-        },
-    }.map_err(|e| anyhow!("failed to find location to query: {}", e))?;
+        Some(loc) => loc,
+        None => find_location().await?,
+    };
 
     let resp = WeatherClient::new(conf.cache)
         .query(
@@ -77,7 +75,7 @@ async fn find_location() -> Result<Location> {
 #[cfg(not(feature = "geoclue"))]
 async fn find_location() -> Result<Location> {
     info!("no location to query, trying geoclue");
-    bail!("no support for geoclue")
+    bail!("geolocalization unsupported: set a location with '-l/--location' or in the config file")
 }
 
 fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
