@@ -30,6 +30,8 @@ cache: "1m"
 #    example: "yellow"
 #  - an integer between 0 and 255 representing an ANSI color code
 #    example: 122
+#  - an hexadecimal color code
+#    example: "#002b3f"
 #  - a triple of integer representing an RGB color
 #    example: [15, 55, 84]
 base_style:

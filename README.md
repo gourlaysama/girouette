@@ -202,6 +202,7 @@ A style attribute is an object with 6 attributes, all optional:
 A color attribute used in styles can be either:
 * a string containing a color name (black, blue, green, red, cyan, magenta, yellow, white),
 * a integer between 0 and 255 representing an ANSI color code (e.g. `122`),
+* a hexadecimal color code (e.g. `"#002b3f"`),
 * a triple of integer representing an RGB color (e.g. `[15, 55, 84]`).
 
 #### License

@@ -30,11 +30,13 @@ cache: "1m"
 #    example: "yellow"
 #  - an integer between 0 and 255 representing an ANSI color code
 #    example: 122
+#  - an hexadecimal color code
+#    example: "#002b3f"
 #  - a triple of integer representing an RGB color
 #    example: [15, 55, 84]
 base_style:
-  bg: [0, 43, 54]
-  fg: [131, 148, 150]
+  bg: "#002b36"
+  fg: "#839496"
   # Bold text
   #bold: false
   # Intense text
@@ -63,17 +65,17 @@ display_mode: "unicode"
 segments:
   - instant:
       style:
-        fg: [147, 161, 161]
+        fg: "#93a1a1"
       date_format: "%R"
   - location_name:
       style:
-        fg: [238, 232, 213]
+        fg: "#eee8d5"
   - temperature
   - weather_icon
   - weather_description:
       style:
-        fg: [238, 232, 213]
+        fg: "#eee8d5"
   - rain:
       style:
-        fg: [38, 139, 210]
+        fg: "#268bd2"
   - wind_speed

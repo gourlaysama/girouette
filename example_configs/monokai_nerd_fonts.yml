@@ -30,13 +30,15 @@ cache: "1m"
 #    example: "yellow"
 #  - an integer between 0 and 255 representing an ANSI color code
 #    example: 122
+#  - an hexadecimal color code
+#    example: "#002b3f"
 #  - a triple of integer representing an RGB color
 #    example: [15, 55, 84]
 base_style:
   # Background color
-  bg: [27,29,30]
+  bg: "#1b1d1e"
   # Foreground color
-  fg: [248,248,242]
+  fg: "#f8f8f2"
   # Bold text
   #bold: false
   # Intense text
@@ -65,18 +67,18 @@ display_mode: "nerd_fonts"
 segments:
   - instant:
       style:
-        fg: [253,151,31]
+        fg: "#fd971f"
       date_format: "%v %R %:z"
   - location_name:
       style:
-        fg: [174,129,255]
+        fg: "#ae81ff"
         intense: true
   - weather_icon:
       style:
-        fg: [196,190,137]
+        fg: "#c4be89"
   - weather_description:
       style:
-        fg: [196,190,137]
+        fg: "#c4be89"
   - temperature
   - rain:
       style:

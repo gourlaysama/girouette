@@ -5,6 +5,7 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+* Allow colors to be set with hexadecimal color codes (e.g. `"#00e8ed"`).
 
 ## [0.4.1] - 2021-02-03
 
