@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+
+## [0.4.2] - 2021-02-09
+
 ### Added
 
 * Allow colors to be set with hexadecimal color codes (e.g. `"#00e8ed"`).
@@ -110,7 +113,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/gourlaysama/girouette/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/gourlaysama/girouette/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/gourlaysama/girouette/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/gourlaysama/girouette/compare/v0.3.1...v0.3.2
