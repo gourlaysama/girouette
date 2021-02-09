@@ -46,7 +46,7 @@ jobs:
           cp -p target/x86_64-unknown-linux-musl/release/build/girouette-*/out/girouette.fish "$DIST_DIR/complete"
           cp -p target/x86_64-unknown-linux-musl/release/build/girouette-*/out/_girouette "$DIST_DIR/complete"
           strip "$DIST_DIR/girouette"
-          tar -cf "$TARGET_FILE" "$DIST_DIR"
+          tar -czf "$TARGET_FILE" "$DIST_DIR"
           echo "G_ASSET=$TARGET_FILE" >> $GITHUB_ENV
           echo "G_VERSION=$G_VERSION" >> $GITHUB_ENV
       - name: Create release
