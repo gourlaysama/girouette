@@ -1,4 +1,5 @@
 pub(crate) mod option_color {
+    use hex::FromHex;
     use serde::de::{self, SeqAccess, Visitor};
     use serde::ser::SerializeTuple;
     use termcolor::Color;
@@ -28,6 +29,13 @@ pub(crate) mod option_color {
                 "magenta" => Ok(Some(Color::Magenta)),
                 "yellow" => Ok(Some(Color::Yellow)),
                 "white" => Ok(Some(Color::White)),
+                a if a.starts_with('#') => match <[u8; 3]>::from_hex(a.trim_start_matches('#')) {
+                    Ok(c) => Ok(Some(Color::Rgb(c[0], c[1], c[2]))),
+                    Err(_) => Err(de::Error::invalid_value(
+                        de::Unexpected::Str(a),
+                        &"a sharp '#' character followed by 6 hex digits",
+                    )),
+                },
                 _ => Err(de::Error::unknown_field(value, FIELDS)),
             }
         }
