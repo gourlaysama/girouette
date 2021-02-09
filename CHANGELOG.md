@@ -5,7 +5,13 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
 * Allow colors to be set with hexadecimal color codes (e.g. `"#00e8ed"`).
+
+### Changed
+
+* The hardcoded location was removed from the default config. The default is now `auto` if geolocalization is enabled, and setting it using `-l/--location` (or in the config) is needed otherwise.
 
 ## [0.4.1] - 2021-02-03
 
