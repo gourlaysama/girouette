@@ -118,8 +118,8 @@ impl WeatherClient {
         let mut buf = String::with_capacity(name.len());
         let mut parts = name.split_whitespace();
         let mut current_part = parts.next();
-        while current_part.is_some() {
-            let value = current_part.unwrap().to_lowercase();
+        while let Some(part) = current_part {
+            let value = part.to_lowercase();
             buf.push_str(&value);
             current_part = parts.next();
             if current_part.is_some() {

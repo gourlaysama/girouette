@@ -65,5 +65,8 @@ version = '0.9'
 features = ['futures']
 optional = true
 
+[build-dependencies]
+version_check = "0.9"
+
 [profile.release]
 lto = true

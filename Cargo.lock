@@ -328,6 +328,7 @@ dependencies = [
  "structopt",
  "termcolor",
  "tokio",
+ "version_check",
 ]
 
 [[package]]
