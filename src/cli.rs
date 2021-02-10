@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug, Serialize, Deserialize)]
-#[structopt(about = "Display the current weather using the Openweather API.")]
+#[structopt(
+    about = "Display the current weather using the Openweather API.",
+    setting = structopt::clap::AppSettings::DisableVersion,
+)]
 pub struct ProgramOptions {
     /// OpenWeather API key (required for anything more than light testing).
     ///
@@ -64,4 +67,8 @@ pub struct ProgramOptions {
     ///
     /// This allows creating a new configuration using the default configuration as a template.
     pub print_default_config: bool,
+
+    /// Prints version information.
+    #[structopt(short = "V", long = "version")]
+    pub version: bool,
 }

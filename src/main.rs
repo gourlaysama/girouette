@@ -1,6 +1,7 @@
 use anyhow::*;
 use girouette::{cli::ProgramOptions, config::ProgramConfig, segments::*, Location, WeatherClient};
 use log::{debug, error, info, trace, warn};
+use std::env;
 use structopt::StructOpt;
 use termcolor::*;
 use tokio::runtime;
@@ -29,7 +30,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn run_async() -> Result<()> {
-    let options = ProgramOptions::from_args();
+    let options_matches = ProgramOptions::clap().get_matches();
+    let options = ProgramOptions::from_clap(&options_matches);
+
+    if options.version {
+        // HACK to disambiguate short/long invocations for the same cli option;
+        // there has to be a better way of doing this...
+        let i = options_matches.index_of("version").unwrap();
+        if std::env::args().nth(i).unwrap_or_default() == "-V" {
+            return print_version(false);
+        } else {
+            return print_version(true);
+        }
+    }
 
     if options.clean_cache {
         return WeatherClient::clean_cache();
@@ -142,4 +155,30 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
     trace!("full config: {:#?}", conf);
 
     Ok(conf)
+}
+
+fn print_version(long: bool) -> Result<()> {
+    if long {
+        println!(
+            "{} {} ({})",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+            option_env!("BUILD_ID").unwrap_or("unknown")
+        );
+        println!("rustc {} ({})", env!("BUILD_RUSTC"), env!("BUILD_INFO"));
+        if let Some(p) = WeatherClient::directories() {
+            println!(
+                "\nconfig location: {}",
+                p.config_dir().join("config.yml").display()
+            );
+            println!("cache location: {}", p.cache_dir().display());
+        }
+        if cfg!(feature = "geoclue") {
+            println!("features: geoclue")
+        }
+    } else {
+        println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+    }
+
+    Ok(())
 }
