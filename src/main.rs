@@ -36,7 +36,9 @@ async fn run_async() -> Result<()> {
     if options.version {
         // HACK to disambiguate short/long invocations for the same cli option;
         // there has to be a better way of doing this...
-        let i = options_matches.index_of("version").unwrap();
+        let i = options_matches.index_of("version").ok_or_else(|| {
+            anyhow!("should never happen: version set yet no version flag")
+        })?;
         if std::env::args().nth(i).unwrap_or_default() == "-V" {
             return print_version(false);
         } else {
