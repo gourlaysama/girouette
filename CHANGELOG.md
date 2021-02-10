@@ -5,6 +5,10 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* New `snow` segment to show the current snowfall level (in mm in the last hour, like with rainfall).
+* More descriptive `--version` output: now shows the build environment and if autolocalization is supported.
 
 ## [0.4.2] - 2021-02-09
 
