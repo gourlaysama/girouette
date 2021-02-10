@@ -83,6 +83,9 @@ segments:
   - rain:
       style:
         fg: 45
+  - snow:
+      style:
+        fg: 45
   - wind_speed
   - humidity
   - pressure:

@@ -78,4 +78,7 @@ segments:
   - rain:
       style:
         fg: "#268bd2"
+  - snow:
+      style:
+        fg: "#268bd2"
   - wind_speed

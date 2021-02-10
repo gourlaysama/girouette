@@ -79,6 +79,7 @@ pub enum Segment {
     WindSpeed(WindSpeed),
     Humidity(Humidity),
     Rain(Rain),
+    Snow(Snow),
     Pressure(Pressure),
 }
 
@@ -99,6 +100,7 @@ impl Segment {
             Segment::WindSpeed(i) => i.render(out, base_style, display_mode, resp),
             Segment::Humidity(i) => i.render(out, base_style, display_mode, resp),
             Segment::Rain(i) => i.render(out, base_style, display_mode, resp),
+            Segment::Snow(i) => i.render(out, base_style, display_mode, resp),
             Segment::Pressure(i) => i.render(out, base_style, display_mode, resp),
         }
     }
@@ -645,6 +647,41 @@ impl Rain {
         }
 
         debug!("did not receive rain data; doing nothing");
+        Ok(RenderStatus::Empty)
+    }
+}
+
+#[derive(Default, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Snow {
+    pub display_mode: Option<DisplayMode>,
+    #[serde(with = "option_color_spec")]
+    pub style: Option<ColorSpec>,
+}
+
+impl Snow {
+    fn render(
+        &self,
+        out: &mut StandardStream,
+        base_style: &ColorSpec,
+        display_mode: DisplayMode,
+        resp: &WeatherResponse,
+    ) -> Result<RenderStatus> {
+        if let Some(r) = &resp.snow {
+            if let Some(mm) = r.one_h.or(r.three_h) {
+                display_print!(out, display_mode, "\u{f2dc}", "\u{2744}", "S");
+                if let Some(ref style) = self.style {
+                    out.set_color(style)?;
+                }
+                write!(out, " {:.1} ", mm)?;
+                out.set_color(base_style)?;
+                write!(out, "mm/h")?;
+
+                return Ok(RenderStatus::Rendered);
+            }
+        }
+
+        debug!("did not receive snow data; doing nothing");
         Ok(RenderStatus::Empty)
     }
 }
