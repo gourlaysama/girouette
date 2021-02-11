@@ -40,10 +40,11 @@ async fn run_async() -> Result<()> {
             anyhow!("should never happen: version set yet no version flag")
         })?;
         if std::env::args().nth(i).unwrap_or_default() == "-V" {
-            return print_version(false);
+            print_version(false);
         } else {
-            return print_version(true);
+            print_version(true);
         }
+        return Ok(());
     }
 
     if options.clean_cache {
@@ -159,7 +160,7 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
     Ok(conf)
 }
 
-fn print_version(long: bool) -> Result<()> {
+fn print_version(long: bool) {
     if long {
         println!(
             "{} {} ({})",
@@ -181,6 +182,4 @@ fn print_version(long: bool) -> Result<()> {
     } else {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
     }
-
-    Ok(())
 }
