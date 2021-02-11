@@ -187,6 +187,7 @@ See the default configuration file [config.yml](config.yml) and browse the [exam
   * `weather_icon`: a single icon summarizing the weather.
   * `weather_description`: a textual description of the weather.
   * `rain`: the amount of falling rain (if any).
+  * `snow`: the amount of falling snow (if any).
   * `wind_speed`: the measured wind speed.
   * `humidity`: the measured humidity.
   * `pressure`: the measured pressure.
