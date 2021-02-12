@@ -47,23 +47,17 @@ jobs:
           cp -p target/x86_64-unknown-linux-musl/release/build/girouette-*/out/_girouette "$DIST_DIR/complete"
           strip "$DIST_DIR/girouette"
           tar -czf "$TARGET_FILE" "$DIST_DIR"
-          echo "G_ASSET=$TARGET_FILE" >> $GITHUB_ENV
+          sha256sum "$TARGET_FILE" > "$TARGET_FILE.sha256"
           echo "G_VERSION=$G_VERSION" >> $GITHUB_ENV
-      - name: Create release
+      - name: Create Github release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: girouette ${{ env.G_VERSION }}
+          name: girouette ${{ env.G_VERSION }}
           draft: true
-      - name: Upload to Github release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.G_ASSET }}
-          asset_name: ${{ env.G_ASSET }}
-          asset_content_type: application/gzip
+          body_path: CHANGELOG.md
+          files: |
+            *.tar.gz
+            *.tar.gz.sha256
