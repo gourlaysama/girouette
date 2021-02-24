@@ -22,6 +22,11 @@ key: "467cf0f1a1d612944d2da01c515c6f26"
 # Value can be a duration ("1h", "2 days", "10min") or "none" to disable it
 cache: "1m"
 
+# Language for location and description segments
+#
+# Possible values are any 2-letter code accepted by the Openweather API.
+#language: "ja"
+
 # Background style for the whole bar
 #
 # All other styles support the same options.

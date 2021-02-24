@@ -11,6 +11,8 @@ pub struct ProgramConfig {
 
     pub cache: Option<String>,
 
+    pub language: Option<String>,
+
     #[serde(flatten)]
     pub display_config: DisplayConfig,
 }
@@ -21,6 +23,7 @@ impl Default for ProgramConfig {
             key: None,
             location: None,
             cache: None,
+            language: None,
             display_config: DisplayConfig::default(),
         }
     }
