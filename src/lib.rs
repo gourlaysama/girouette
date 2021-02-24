@@ -162,7 +162,12 @@ impl WeatherClient {
         Ok(())
     }
 
-    pub async fn query(&self, location: Location, key: String) -> Result<WeatherResponse> {
+    pub async fn query(
+        &self,
+        location: Location,
+        key: String,
+        language: Option<String>,
+    ) -> Result<WeatherResponse> {
         match self.query_cache(&location) {
             Ok(Some(resp)) => return Ok(resp),
             Ok(None) => {}
@@ -171,10 +176,15 @@ impl WeatherClient {
             }
         }
 
-        self.query_api(location, key).await
+        self.query_api(location, key, language).await
     }
 
-    async fn query_api(&self, location: Location, key: String) -> Result<WeatherResponse> {
+    async fn query_api(
+        &self,
+        location: Location,
+        key: String,
+        language: Option<String>,
+    ) -> Result<WeatherResponse> {
         debug!("querying {:?}", location);
         let mut params = Vec::with_capacity(3);
         match &location {
@@ -184,6 +194,10 @@ impl WeatherClient {
             }
             Location::Place(place) => params.push(("q", place.to_string())),
         };
+
+        if let Some(language) = language {
+            params.push(("lang", language));
+        }
 
         params.push(("appid", key));
 

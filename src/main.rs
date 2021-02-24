@@ -71,7 +71,8 @@ async fn run_async() -> Result<()> {
                     "no API key for OpenWeather was found
                    you can get a key over at https://openweathermap.org/appid",
                 )
-            })?,
+            },)?,
+            conf.language
         )
         .await?;
     let mut stdout = StandardStream::stdout(ColorChoice::Auto);
