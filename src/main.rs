@@ -36,9 +36,9 @@ async fn run_async() -> Result<()> {
     if options.version {
         // HACK to disambiguate short/long invocations for the same cli option;
         // there has to be a better way of doing this...
-        let i = options_matches.index_of("version").ok_or_else(|| {
-            anyhow!("should never happen: version set yet no version flag")
-        })?;
+        let i = options_matches
+            .index_of("version")
+            .ok_or_else(|| anyhow!("should never happen: version set yet no version flag"))?;
         if std::env::args().nth(i).unwrap_or_default() == "-V" {
             print_version(false);
         } else {
@@ -71,8 +71,8 @@ async fn run_async() -> Result<()> {
                     "no API key for OpenWeather was found
                    you can get a key over at https://openweathermap.org/appid",
                 )
-            },)?,
-            conf.language
+            })?,
+            conf.language.as_deref(),
         )
         .await?;
     let mut stdout = StandardStream::stdout(ColorChoice::Auto);
