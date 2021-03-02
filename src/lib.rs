@@ -95,13 +95,22 @@ impl WeatherClient {
         ProjectDirs::from("rs", "", "Girouette")
     }
 
-    fn find_cache_for(&self, location: &Location) -> Result<std::path::PathBuf> {
+    fn find_cache_for(
+        &self,
+        location: &Location,
+        language: Option<&str>,
+    ) -> Result<std::path::PathBuf> {
         if let Some(p) = WeatherClient::directories() {
             let suffix = match location {
                 Location::LatLon(lat, lon) => format!("{}_{}", lat, lon),
                 Location::Place(p) => self.clean_up_for_path(&p),
             };
-            let file = p.cache_dir().join(format!("results/api-{}.json", suffix));
+            let f = if let Some(lang) = language {
+                format!("results/api-{}-{}.json", lang, suffix)
+            } else {
+                format!("results/api-{}.json", suffix)
+            };
+            let file = p.cache_dir().join(f);
             debug!("looking at cache file at '{}'", file.display());
 
             if let Some(p) = file.parent() {
@@ -129,10 +138,14 @@ impl WeatherClient {
         buf
     }
 
-    fn query_cache(&self, location: &Location) -> Result<Option<WeatherResponse>> {
+    fn query_cache(
+        &self,
+        location: &Location,
+        language: Option<&str>,
+    ) -> Result<Option<WeatherResponse>> {
         if let Some(ref cache_length) = self.cache_length {
             let duration = humantime::parse_duration(cache_length)?;
-            let path = self.find_cache_for(&location)?;
+            let path = self.find_cache_for(&location, language)?;
 
             if path.exists() {
                 let m = std::fs::metadata(&path)?;
@@ -154,16 +167,21 @@ impl WeatherClient {
         Ok(None)
     }
 
-    fn write_cache(&self, location: Location, bytes: &[u8]) -> Result<()> {
-        let path = self.find_cache_for(&location)?;
+    fn write_cache(&self, location: Location, language: Option<&str>, bytes: &[u8]) -> Result<()> {
+        let path = self.find_cache_for(&location, language)?;
         debug!("writing cache for {}", location);
         std::fs::write(path, bytes)?;
 
         Ok(())
     }
 
-    pub async fn query(&self, location: Location, key: String) -> Result<WeatherResponse> {
-        match self.query_cache(&location) {
+    pub async fn query(
+        &self,
+        location: Location,
+        key: String,
+        language: Option<&str>,
+    ) -> Result<WeatherResponse> {
+        match self.query_cache(&location, language) {
             Ok(Some(resp)) => return Ok(resp),
             Ok(None) => {}
             Err(e) => {
@@ -171,10 +189,15 @@ impl WeatherClient {
             }
         }
 
-        self.query_api(location, key).await
+        self.query_api(location, key, language).await
     }
 
-    async fn query_api(&self, location: Location, key: String) -> Result<WeatherResponse> {
+    async fn query_api(
+        &self,
+        location: Location,
+        key: String,
+        language: Option<&str>,
+    ) -> Result<WeatherResponse> {
         debug!("querying {:?}", location);
         let mut params = Vec::with_capacity(3);
         match &location {
@@ -184,6 +207,10 @@ impl WeatherClient {
             }
             Location::Place(place) => params.push(("q", place.to_string())),
         };
+
+        if let Some(language) = language {
+            params.push(("lang", language.to_owned()));
+        }
 
         params.push(("appid", key));
 
@@ -206,7 +233,7 @@ impl WeatherClient {
         match resp {
             ApiResponse::Success(w) => {
                 if self.cache_length.is_some() {
-                    if let Err(e) = self.write_cache(location, &bytes) {
+                    if let Err(e) = self.write_cache(location, language.as_deref(), &bytes) {
                         warn!("error while writing cached response: {}", e);
                     }
                 }

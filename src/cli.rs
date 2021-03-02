@@ -48,6 +48,16 @@ pub struct ProgramOptions {
     /// This option overrides the corresponding value from the config.
     pub cache: Option<String>,
 
+    #[structopt(short = "L", long)]
+    /// Use this language for location names and weather descriptions.
+    ///
+    /// This asks OpenWeather to provide location names and weather descriptions
+    /// in the given language.
+    ///
+    /// Possible values are any 2-letter language code supported by OpenWeather, like
+    /// "jp" (Japanese), "en" (English), "uk" (Ukrainian) or "zh_cn" (Chinese Simpl.).
+    pub language: Option<String>,
+
     #[structopt(long)]
     /// Removes all cached responses and exits.
     ///

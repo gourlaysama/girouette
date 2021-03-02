@@ -36,9 +36,9 @@ async fn run_async() -> Result<()> {
     if options.version {
         // HACK to disambiguate short/long invocations for the same cli option;
         // there has to be a better way of doing this...
-        let i = options_matches.index_of("version").ok_or_else(|| {
-            anyhow!("should never happen: version set yet no version flag")
-        })?;
+        let i = options_matches
+            .index_of("version")
+            .ok_or_else(|| anyhow!("should never happen: version set yet no version flag"))?;
         if std::env::args().nth(i).unwrap_or_default() == "-V" {
             print_version(false);
         } else {
@@ -72,6 +72,7 @@ async fn run_async() -> Result<()> {
                    you can get a key over at https://openweathermap.org/appid",
                 )
             })?,
+            conf.language.as_deref(),
         )
         .await?;
     let mut stdout = StandardStream::stdout(ColorChoice::Auto);
@@ -136,6 +137,7 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
     set_conf_from_options(&mut conf, &options.key, "key")?;
     set_conf_from_options(&mut conf, &options.location, "location")?;
     set_conf_from_options(&mut conf, &options.cache, "cache")?;
+    set_conf_from_options(&mut conf, &options.language, "language")?;
 
     // cache: none means disabled cache
     if let Some(cache) = conf.get::<Option<String>>("cache").unwrap_or(None) {
