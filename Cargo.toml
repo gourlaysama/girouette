@@ -44,7 +44,7 @@ default-features = false
 features = ['suggestions']
 
 [dependencies.config]
-version = '0.10'
+version = '0.11'
 default-features = false
 features = ['yaml']
 
