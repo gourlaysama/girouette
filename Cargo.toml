@@ -1,6 +1,6 @@
 [package]
 name = 'girouette'
-version = "0.5.0-dev"
+version = "0.5.0"
 authors = ['Antoine Gourlay <antoine@gourlay.fr>']
 edition = '2018'
 
