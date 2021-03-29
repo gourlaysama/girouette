@@ -107,6 +107,15 @@ $ ./target/x86_64-unknown-linux-musl/release/girouette
 
         This option overrides the corresponding value from the config.
 
+-L, --language <language>
+        Use this language for location names and weather descriptions.
+
+        This asks OpenWeather to provide location names and weather descriptions in
+        the given language.
+
+        Possible values are any 2-letter language code supported by OpenWeather, like
+        "jp" (Japanese), "en" (English), "uk" (Ukrainian) or "zh_cn" (Chinese Simpl.).
+
 -l, --location <location>    
         Location to query (required if not set in config).
 
@@ -165,6 +174,7 @@ $ girouette --print-default-config > myconfig.yml
   If there is a cached response younger than the duration given as argument, it is returned directly. Otherwise, it queries the API and write the response to the cache for use by a later invocation.
   NOTE: No response is written to the cache if this option isn't set. The invocation doing the caching and the one potentially querying it *both* need this option set.
   Recognized durations go from seconds ("seconds, second, sec, s") to years ("years, year, y").
+* `language` (string): the language used for location and description segments. Possible values are any 2-letter code accepted by the Openweather API.
 
 
 See the default configuration file [config.yml](config.yml) and browse the [example_configs](example_configs/) directory for examples (the example output shown above displays the default and both example configurations).
