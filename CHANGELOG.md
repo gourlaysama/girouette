@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* Localization support: added new `-L/--language` cli & config option to choose the output language for location names and weather descriptions. Possible values are any 2-letter language code supported by OpenWeather.
 
 ## [0.4.3] - 2021-02-10
 
