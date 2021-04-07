@@ -201,6 +201,7 @@ See the default configuration file [config.yml](config.yml) and browse the [exam
   * `wind_speed`: the measured wind speed.
   * `humidity`: the measured humidity.
   * `pressure`: the measured pressure.
+  * `cloud_cover`: the overall fraction of the sky covered by clouds.
 
 A style attribute is an object with 6 attributes, all optional:
 * `bg` (color): the background color.
