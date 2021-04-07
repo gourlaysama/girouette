@@ -99,6 +99,7 @@ segments:
       style:
         fg: 45
   - wind_speed
+  - cloud_cover
   - humidity
   - pressure:
       style:
