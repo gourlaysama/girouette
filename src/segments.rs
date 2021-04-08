@@ -81,6 +81,7 @@ pub enum Segment {
     Rain(Rain),
     Snow(Snow),
     Pressure(Pressure),
+    CloudCover(CloudCover),
 }
 
 impl Segment {
@@ -102,6 +103,7 @@ impl Segment {
             Segment::Rain(i) => i.render(out, base_style, display_mode, resp),
             Segment::Snow(i) => i.render(out, base_style, display_mode, resp),
             Segment::Pressure(i) => i.render(out, base_style, display_mode, resp),
+            Segment::CloudCover(c) => c.render(out, base_style, display_mode, resp),
         }
     }
 }
@@ -429,7 +431,7 @@ impl WeatherIcon {
 
                 self.get_icon(resp.weather[0].id, night, &wind_type)
             },
-            self.get_unicode(resp.weather[0].id, night),
+            format!("{}\u{fe0f}", self.get_unicode(resp.weather[0].id, night)),
             {
                 warn!("no weather icon to display in ascii mode!");
                 ""
@@ -521,7 +523,11 @@ impl WindSpeed {
                 &icons[3 * dir_idx..3 * dir_idx + 3]
             })
             .unwrap_or(fallback);
-        write!(stdout, "{}", icon)?;
+        if let DisplayMode::Unicode = display_mode {
+            write!(stdout, "{}\u{fe0f}", icon)?;
+        } else {
+            write!(stdout, "{}", icon)?;
+        }
 
         let speed = wind.speed * 3.6;
 
@@ -669,7 +675,7 @@ impl Snow {
     ) -> Result<RenderStatus> {
         if let Some(r) = &resp.snow {
             if let Some(mm) = r.one_h.or(r.three_h) {
-                display_print!(out, display_mode, "\u{f2dc}", "\u{2744}", "S");
+                display_print!(out, display_mode, "\u{f2dc}", "\u{2744}\u{fe0f}", "S");
                 if let Some(ref style) = self.style {
                     out.set_color(style)?;
                 }
@@ -722,6 +728,49 @@ impl Pressure {
         resp: &WeatherResponse,
     ) -> Result<RenderStatus> {
         self.display_pressure(out, resp.main.pressure, base_style, display_mode)?;
+
+        Ok(RenderStatus::Rendered)
+    }
+}
+
+#[derive(Default, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct CloudCover {
+    pub display_mode: Option<DisplayMode>,
+    #[serde(with = "option_color_spec")]
+    pub style: Option<ColorSpec>,
+}
+
+impl CloudCover {
+    fn display_cover(
+        &self,
+        stdout: &mut StandardStream,
+        cloud_cover: u16,
+        base_style: &ColorSpec,
+        display_mode: DisplayMode,
+    ) -> Result<()> {
+        display_print!(stdout, display_mode, "\u{e33d}", "\u{2601}\u{fe0f}", "C");
+
+        if let Some(ref style) = self.style {
+            stdout.set_color(style)?;
+        }
+        write!(stdout, " {}", cloud_cover)?;
+        stdout.set_color(base_style)?;
+        write!(stdout, " %")?;
+
+        Ok(())
+    }
+
+    fn render(
+        &self,
+        out: &mut StandardStream,
+        base_style: &ColorSpec,
+        display_mode: DisplayMode,
+        resp: &WeatherResponse,
+    ) -> Result<RenderStatus> {
+        if let Some(ref clouds) = resp.clouds {
+            self.display_cover(out, clouds.all, base_style, display_mode)?;
+        }
 
         Ok(RenderStatus::Rendered)
     }

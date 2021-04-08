@@ -5,6 +5,13 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Added
+
+* New `cloud_cover` segment to show the current cloud cover in %.
+
+### Fixed
+
+* Unicode weather icons are now printed in Emoji mode, if supported by the font (using the emoji variation selector).
 
 ## [0.5.0] - 2021-03-29
 
