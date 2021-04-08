@@ -431,7 +431,7 @@ impl WeatherIcon {
 
                 self.get_icon(resp.weather[0].id, night, &wind_type)
             },
-            self.get_unicode(resp.weather[0].id, night),
+            format!("{}\u{fe0f}", self.get_unicode(resp.weather[0].id, night)),
             {
                 warn!("no weather icon to display in ascii mode!");
                 ""
@@ -523,7 +523,11 @@ impl WindSpeed {
                 &icons[3 * dir_idx..3 * dir_idx + 3]
             })
             .unwrap_or(fallback);
-        write!(stdout, "{}", icon)?;
+        if let DisplayMode::Unicode = display_mode {
+            write!(stdout, "{}\u{fe0f}", icon)?;
+        } else {
+            write!(stdout, "{}", icon)?;
+        }
 
         let speed = wind.speed * 3.6;
 
@@ -671,7 +675,7 @@ impl Snow {
     ) -> Result<RenderStatus> {
         if let Some(r) = &resp.snow {
             if let Some(mm) = r.one_h.or(r.three_h) {
-                display_print!(out, display_mode, "\u{f2dc}", "\u{2744}", "S");
+                display_print!(out, display_mode, "\u{f2dc}", "\u{2744}\u{fe0f}", "S");
                 if let Some(ref style) = self.style {
                     out.set_color(style)?;
                 }
@@ -745,7 +749,7 @@ impl CloudCover {
         base_style: &ColorSpec,
         display_mode: DisplayMode,
     ) -> Result<()> {
-        display_print!(stdout, display_mode, "\u{e33d}", "\u{2601}", "C");
+        display_print!(stdout, display_mode, "\u{e33d}", "\u{2601}\u{fe0f}", "C");
 
         if let Some(ref style) = self.style {
             stdout.set_color(style)?;
