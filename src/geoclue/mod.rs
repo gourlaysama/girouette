@@ -14,7 +14,7 @@ use log::*;
 use std::time::Duration;
 use tokio::time::timeout;
 
-pub async fn get_location() -> Result<Location> {
+pub async fn get_location(timeout_duration: Duration) -> Result<Location> {
     let (resource, conn) = connection::new_system_sync()?;
 
     tokio::spawn(async {
@@ -52,9 +52,9 @@ pub async fn get_location() -> Result<Location> {
     client.start().await.context("D-bus error")?;
 
     let res: (_, OrgFreedesktopGeoClue2ClientLocationUpdated) =
-        timeout(Duration::from_secs(5), stream.next())
+        timeout(timeout_duration, stream.next())
             .await
-            .map_err(|_| anyhow!("geoclue couldn't find your location within five seconds"))?
+            .map_err(|_| anyhow!("geoclue timed-out trying to find your location"))?
             .ok_or_else(|| anyhow!("no location"))?;
 
     conn.remove_match(incoming.token()).await.context("D-bus error")?;

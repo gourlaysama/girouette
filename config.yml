@@ -24,8 +24,8 @@ cache: "1m"
 
 # Time to wait for a response from Openweather
 #
-# Value can be a duration ("1h", "2 days", "10min"), defaults to "60s".
-timeout: "5s"
+# Value can be a duration ("1h", "2 days", "10min"), defaults to "10s".
+#timeout: "10s"
 
 # Language for location and description segments
 #
