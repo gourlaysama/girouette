@@ -262,3 +262,17 @@ pub enum DisplayMode {
     Unicode,
     Ascii,
 }
+
+#[macro_export]
+macro_rules! show {
+    ($level:ident, $($a:tt),*) => {
+        if log_enabled!(log::Level::$level) {
+            println!($($a,)*);
+        }
+    };
+    ($($a:tt),*) => {
+        if log_enabled!(log::Level::Error) {
+            println!($($a,)*);
+        }
+    }
+}
