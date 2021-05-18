@@ -54,7 +54,7 @@ features = ["derive"]
 
 [dependencies.tokio]
 version = "1"
-features = ["rt"]
+features = ["rt", "time"]
 
 [dependencies.dbus]
 version = "0.9"

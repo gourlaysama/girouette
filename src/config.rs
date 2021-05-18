@@ -13,6 +13,8 @@ pub struct ProgramConfig {
 
     pub language: Option<String>,
 
+    pub timeout: Option<String>,
+
     #[serde(flatten)]
     pub display_config: DisplayConfig,
 }
@@ -24,6 +26,7 @@ impl Default for ProgramConfig {
             location: None,
             cache: None,
             language: None,
+            timeout: None,
             display_config: DisplayConfig::default(),
         }
     }

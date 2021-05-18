@@ -83,7 +83,23 @@ async fn run_async() -> Result<()> {
         None => find_location().await?,
     };
 
-    let resp = WeatherClient::new(conf.cache)
+    let cache_length = match conf.cache {
+        Some(c) => Some(
+            humantime::parse_duration(&c)
+                .context("failed to parse cache length: not a valid duration")?,
+        ),
+        None => None,
+    };
+
+    let timeout = match conf.timeout {
+        Some(c) => Some(
+            humantime::parse_duration(&c)
+                .context("failed to parse timeout: not a valid duration")?,
+        ),
+        None => None,
+    };
+
+    let resp = WeatherClient::new(cache_length, timeout)
         .query(
             location,
             conf.key.ok_or_else(|| {
