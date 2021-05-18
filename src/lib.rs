@@ -77,11 +77,11 @@ pub struct WeatherClient {
 }
 
 impl WeatherClient {
-    pub fn new(cache_length: Option<Duration>, timeout: Option<Duration>) -> Self {
+    pub fn new(cache_length: Option<Duration>, timeout: Duration) -> Self {
         WeatherClient {
             client: reqwest::Client::new(),
             cache_length,
-            timeout: timeout.unwrap_or_else(|| Duration::from_secs(60)),
+            timeout,
         }
     }
 
