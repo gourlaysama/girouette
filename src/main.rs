@@ -106,7 +106,9 @@ async fn run_async() -> Result<()> {
 #[cfg(feature = "geoclue")]
 async fn find_location() -> Result<Location> {
     info!("no location to query, trying geoclue");
-    girouette::geoclue::get_location().await
+    girouette::geoclue::get_location().await.map_err(|e| {
+        e.context("geoclue couldn't report your location; use `-l/--location' argument`")
+    })
 }
 
 #[cfg(not(feature = "geoclue"))]

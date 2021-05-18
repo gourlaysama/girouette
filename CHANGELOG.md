@@ -10,6 +10,10 @@
 * New `cloud_cover` segment to show the current cloud cover in %.
 * New `-v/-q` pair of short options to respectively increase/decrease verbosity. The options can be stacked (`-vvv`). The default verbosity level is `warn` (from `off`, `error`, `warn`, `info`, `debug`, `trace`), with the cli arguments overriding the `GIROUETTE_LOG` environment variable. `-qq` silences all output except weather segments.
 
+### Changed
+
+* Geoclue must now return a location within 5 seconds (instead of 1 second) before we give up and return an error.
+
 ### Fixed
 
 * Unicode weather icons are now printed in Emoji mode, if supported by the font (using the emoji variation selector).
