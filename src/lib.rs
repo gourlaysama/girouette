@@ -11,6 +11,7 @@ use std::time::Duration;
 use anyhow::*;
 use directories_next::ProjectDirs;
 use log::*;
+use reqwest::StatusCode;
 use response::{ApiResponse, WeatherResponse};
 use serde::{Deserialize, Serialize};
 use tokio::time::timeout;
@@ -248,18 +249,24 @@ impl WeatherClient {
                 }
                 Ok(w)
             }
-            ApiResponse::OtherInt { cod, message } => handle_error(cod, &message, location),
+            ApiResponse::OtherInt { cod, message } => {
+                handle_error(StatusCode::from_u16(cod)?, &message, location)
+            }
             ApiResponse::OtherString { cod, message } => {
-                handle_error(cod.parse().unwrap_or_default(), &message, location)
+                handle_error(cod.parse()?, &message, location)
             }
         }
     }
 }
 
-fn handle_error(error_code: u32, message: &str, location: Location) -> Result<WeatherResponse> {
+fn handle_error(
+    error_code: StatusCode,
+    message: &str,
+    location: Location,
+) -> Result<WeatherResponse> {
     match error_code {
-        404 => bail!("location error: '{}' for '{}'", message, location),
-        429 => bail!("Too many calls to the API! If you not using your own API key, please get your own for free over at http://openweathermap.org"),
+        StatusCode::NOT_FOUND => bail!("location error: '{}' for '{}'", message, location),
+        StatusCode::TOO_MANY_REQUESTS => bail!("Too many calls to the API! If you not using your own API key, please get your own for free over at http://openweathermap.org"),
         _ => bail!("error from OpenWeather API: {}: {}", error_code, message),
     }
 }

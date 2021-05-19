@@ -3,7 +3,7 @@
 pub enum ApiResponse {
     Success(WeatherResponse),
     // hack: Openweather API returns some very ugly json
-    OtherInt { cod: u32, message: String },
+    OtherInt { cod: u16, message: String },
     OtherString { cod: String, message: String },
 }
 
