@@ -1,6 +1,9 @@
 use anyhow::*;
-use girouette::{cli::ProgramOptions, config::ProgramConfig, segments::*, Location, WeatherClient};
-use log::{debug, error, info, trace, warn};
+use env_logger::{Builder, Env};
+use girouette::{
+    cli::ProgramOptions, config::ProgramConfig, segments::*, show, Location, WeatherClient,
+};
+use log::*;
 use std::env;
 use structopt::StructOpt;
 use termcolor::*;
@@ -9,22 +12,39 @@ use tokio::runtime;
 static DEFAULT_CONFIG: &str = include_str!("../config.yml");
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    pretty_env_logger::try_init_custom_env("GIROUETTE_LOG")?;
+    let options = ProgramOptions::from_args();
+
+    let mut b = Builder::default();
+    b.format_timestamp(None);
+    b.filter_level(LevelFilter::Warn); // default filter lever
+    b.parse_env(Env::from("GIROUETTE_LOG")); // override with env
+                                             // override with CLI option
+    if let Some(level) = options.log_level_with_default(2) {
+        b.filter_level(level);
+    };
+    b.try_init()?;
 
     let rt = runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
 
-    std::process::exit({
-        match rt.block_on(run_async()) {
-            Ok(()) => 0,
-            Err(e) => {
-                error!("{}", e);
-                for cause in e.chain().skip(1) {
-                    info!("cause: {}", cause);
+    std::process::exit(match rt.block_on(run_async()) {
+        Ok(()) => 0,
+        Err(e) => {
+            let causes = e.chain().skip(1);
+            if causes.len() != 0 {
+                if log_enabled!(Level::Info) {
+                    show!("Error: {}", e);
+                    for cause in e.chain().skip(1) {
+                        info!("cause: {}", cause);
+                    }
+                } else {
+                    show!("Error: {}; rerun with '-v' for more information", e);
                 }
-                1
+            } else {
+                show!("Error: {}", e);
             }
+            1
         }
     })
 }
