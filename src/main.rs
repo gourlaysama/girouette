@@ -11,6 +11,7 @@ use tokio::runtime;
 
 static DEFAULT_CONFIG: &str = include_str!("../config.yml");
 const DEFAULT_TIMEOUT_SEC: u64 = 10;
+const LOG_ENV_VAR: &str = "GIROUETTE_LOG";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = ProgramOptions::from_args();
@@ -18,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut b = Builder::default();
     b.format_timestamp(None);
     b.filter_level(LevelFilter::Warn); // default filter lever
-    b.parse_env(Env::from("GIROUETTE_LOG")); // override with env
+    b.parse_env(Env::from(LOG_ENV_VAR)); // override with env
                                              // override with CLI option
     if let Some(level) = options.log_level_with_default(2) {
         b.filter_level(level);
