@@ -4,12 +4,14 @@ use girouette::{
     cli::ProgramOptions, config::ProgramConfig, segments::*, show, Location, WeatherClient,
 };
 use log::*;
-use std::env;
+use std::{env, time::Duration};
 use structopt::StructOpt;
 use termcolor::*;
 use tokio::runtime;
 
 static DEFAULT_CONFIG: &str = include_str!("../config.yml");
+const DEFAULT_TIMEOUT_SEC: u64 = 10;
+const LOG_ENV_VAR: &str = "GIROUETTE_LOG";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = ProgramOptions::from_args();
@@ -17,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut b = Builder::default();
     b.format_timestamp(None);
     b.filter_level(LevelFilter::Warn); // default filter lever
-    b.parse_env(Env::from("GIROUETTE_LOG")); // override with env
+    b.parse_env(Env::from(LOG_ENV_VAR)); // override with env
                                              // override with CLI option
     if let Some(level) = options.log_level_with_default(2) {
         b.filter_level(level);
@@ -78,12 +80,27 @@ async fn run_async() -> Result<()> {
 
     let conf = make_config(&options)?;
 
-    let location = match conf.location {
-        Some(loc) => loc,
-        None => find_location().await?,
+    let cache_length = match conf.cache {
+        Some(c) => Some(
+            humantime::parse_duration(&c)
+                .context("failed to parse cache length: not a valid duration")?,
+        ),
+        None => None,
     };
 
-    let resp = WeatherClient::new(conf.cache)
+    let timeout = match conf.timeout {
+        Some(c) => humantime::parse_duration(&c)
+            .context("failed to parse timeout: not a valid duration")?,
+
+        None => Duration::from_secs(DEFAULT_TIMEOUT_SEC),
+    };
+
+    let location = match conf.location {
+        Some(loc) => loc,
+        None => find_location(timeout).await?,
+    };
+
+    let resp = WeatherClient::new(cache_length, timeout)
         .query(
             location,
             conf.key.ok_or_else(|| {
@@ -104,13 +121,17 @@ async fn run_async() -> Result<()> {
 }
 
 #[cfg(feature = "geoclue")]
-async fn find_location() -> Result<Location> {
+async fn find_location(timeout: Duration) -> Result<Location> {
     info!("no location to query, trying geoclue");
-    girouette::geoclue::get_location().await
+    girouette::geoclue::get_location(timeout)
+        .await
+        .map_err(|e| {
+            e.context("geoclue couldn't report your location; use `-l/--location' argument`")
+        })
 }
 
 #[cfg(not(feature = "geoclue"))]
-async fn find_location() -> Result<Location> {
+async fn find_location(_timeout: Duration) -> Result<Location> {
     info!("no location to query, trying geoclue");
     bail!("geolocalization unsupported: set a location with '-l/--location' or in the config file")
 }

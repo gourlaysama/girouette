@@ -6,11 +6,15 @@ pub mod response;
 pub mod segments;
 mod serde_utils;
 
+use std::time::Duration;
+
 use anyhow::*;
 use directories_next::ProjectDirs;
 use log::*;
+use reqwest::StatusCode;
 use response::{ApiResponse, WeatherResponse};
 use serde::{Deserialize, Serialize};
+use tokio::time::timeout;
 
 const API_URL: &str = "https://api.openweathermap.org/data/2.5/weather?units=metric";
 
@@ -69,14 +73,16 @@ impl Location {
 #[derive(Default)]
 pub struct WeatherClient {
     client: reqwest::Client,
-    cache_length: Option<String>,
+    cache_length: Option<Duration>,
+    timeout: Duration,
 }
 
 impl WeatherClient {
-    pub fn new(cache_length: Option<String>) -> Self {
+    pub fn new(cache_length: Option<Duration>, timeout: Duration) -> Self {
         WeatherClient {
             client: reqwest::Client::new(),
             cache_length,
+            timeout,
         }
     }
 
@@ -143,14 +149,13 @@ impl WeatherClient {
         location: &Location,
         language: Option<&str>,
     ) -> Result<Option<WeatherResponse>> {
-        if let Some(ref cache_length) = self.cache_length {
-            let duration = humantime::parse_duration(cache_length)?;
+        if let Some(cache_length) = self.cache_length {
             let path = self.find_cache_for(&location, language)?;
 
             if path.exists() {
                 let m = std::fs::metadata(&path)?;
                 let elapsed = m.modified()?.elapsed()?;
-                if elapsed <= duration {
+                if elapsed <= cache_length {
                     let f = std::fs::File::open(&path)?;
                     if let ApiResponse::Success(resp) = serde_json::from_reader(f)? {
                         info!("using cached response for {}", location);
@@ -214,14 +219,19 @@ impl WeatherClient {
 
         params.push(("appid", key));
 
-        let bytes = self
-            .client
-            .get(API_URL)
-            .query(&params)
-            .send()
-            .await?
-            .bytes()
+        let request = self.client.get(API_URL).query(&params).send();
+        let request = timeout(self.timeout, request);
+
+        let response = request
             .await
+            .context("Connection to openweathermap.org timed-out")?
+            .context("Unable to connect to openweathermap.org")?;
+
+        let bytes = timeout(self.timeout, response.bytes());
+
+        let bytes = bytes
+            .await
+            .context("Connection to openweathermap.org timed-out")?
             .context("Unable to connect to openweathermap.org")?;
 
         if log_enabled!(Level::Trace) {
@@ -239,18 +249,24 @@ impl WeatherClient {
                 }
                 Ok(w)
             }
-            ApiResponse::OtherInt { cod, message } => handle_error(cod, &message, location),
+            ApiResponse::OtherInt { cod, message } => {
+                handle_error(StatusCode::from_u16(cod)?, &message, location)
+            }
             ApiResponse::OtherString { cod, message } => {
-                handle_error(cod.parse().unwrap_or_default(), &message, location)
+                handle_error(cod.parse()?, &message, location)
             }
         }
     }
 }
 
-fn handle_error(error_code: u32, message: &str, location: Location) -> Result<WeatherResponse> {
+fn handle_error(
+    error_code: StatusCode,
+    message: &str,
+    location: Location,
+) -> Result<WeatherResponse> {
     match error_code {
-        404 => bail!("location error: '{}' for '{}'", message, location),
-        429 => bail!("Too many calls to the API! If you not using your own API key, please get your own for free over at http://openweathermap.org"),
+        StatusCode::NOT_FOUND => bail!("location error: '{}' for '{}'", message, location),
+        StatusCode::TOO_MANY_REQUESTS => bail!("Too many calls to the API! If you not using your own API key, please get your own for free over at http://openweathermap.org"),
         _ => bail!("error from OpenWeather API: {}: {}", error_code, message),
     }
 }

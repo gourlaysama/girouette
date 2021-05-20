@@ -10,7 +10,7 @@ key: "467cf0f1a1d612944d2da01c515c6f26"
 #
 #location = "Dubai"
 #location = "53.258,3.114"
-#location: "London, UK"
+location: "London, UK"
 
 # Separator text between entries
 #
@@ -21,6 +21,11 @@ key: "467cf0f1a1d612944d2da01c515c6f26"
 #
 # Value can be a duration ("1h", "2 days", "10min") or "none" to disable it
 cache: "1m"
+
+# Time to wait for a response from Openweather
+#
+# Value can be a duration ("1h", "2 days", "10min"), defaults to "10s".
+#timeout: "10s"
 
 # Language for location and description segments
 #
