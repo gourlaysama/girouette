@@ -1,6 +1,7 @@
-use crate::{config::*, serde_utils::*};
-use crate::{api::current::Wind, DisplayMode, CurrentResponse, WindType};
-use anyhow::Result;
+use crate::api::Response;
+use crate::{api::current::Wind, DisplayMode, WindType};
+use crate::{config::*, serde_utils::*, QueryKind};
+use anyhow::*;
 use chrono::{FixedOffset, TimeZone, Utc};
 use log::*;
 use serde::{Deserialize, Serialize};
@@ -27,7 +28,9 @@ enum RenderStatus {
 }
 
 impl Renderer {
-    pub fn new(mut display_config: DisplayConfig) -> Self {
+    pub fn from(display_config: &DisplayConfig) -> Self {
+        let mut display_config = display_config.clone();
+
         // reset stays false for segments but we hardcode it to true
         // for the base style. TODO: find a better way to do this
         display_config.base_style.set_reset(true);
@@ -35,7 +38,7 @@ impl Renderer {
         Renderer { display_config }
     }
 
-    pub fn render(&mut self, out: &mut StandardStream, resp: &CurrentResponse) -> Result<()> {
+    pub fn render(&mut self, out: &mut StandardStream, resp: &Response) -> Result<()> {
         if self.display_config.segments.is_empty() {
             warn!("there are not segments to display!");
             return Ok(());
@@ -66,9 +69,28 @@ impl Renderer {
 
         Ok(())
     }
+
+    pub fn display_kind(&self) -> Result<QueryKind> {
+        let mut current = false;
+        let mut forecast = false;
+        for s in &self.display_config.segments {
+            if s.is_forecast() {
+                forecast = true;
+            } else {
+                current = true;
+            }
+        }
+
+        match (current, forecast) {
+            (true, true) => Ok(QueryKind::Both),
+            (true, false) => Ok(QueryKind::Current),
+            (false, true) => Ok(QueryKind::ForeCast),
+            (false, false) => bail!("there is no weather info to display"),
+        }
+    }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Segment {
     Instant(Instant),
@@ -90,7 +112,7 @@ impl Segment {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
         match self {
             Segment::Instant(i) => i.render(out, base_style, display_mode, resp),
@@ -106,9 +128,14 @@ impl Segment {
             Segment::CloudCover(c) => c.render(out, base_style, display_mode, resp),
         }
     }
+
+    pub fn is_forecast(&self) -> bool {
+        // No forecast segments have been added yet
+        false
+    }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Instant {
     #[serde(with = "option_color_spec")]
@@ -135,9 +162,13 @@ impl Instant {
         out: &mut StandardStream,
         _: &ColorSpec,
         _: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
-        let source_date = FixedOffset::east(resp.timezone).timestamp(resp.dt, 0);
+        let resp = resp.as_current()?;
+        let timezone = resp.timezone;
+        let dt = resp.dt;
+
+        let source_date = FixedOffset::east(timezone).timestamp(dt, 0);
 
         if let Some(ref style) = self.style {
             out.set_color(style)?;
@@ -149,7 +180,7 @@ impl Instant {
     }
 }
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct LocationName {
     #[serde(with = "option_color_spec")]
@@ -166,13 +197,15 @@ impl LocationName {
         out: &mut StandardStream,
         _: &ColorSpec,
         _: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
+        let name = &resp.as_current()?.name;
+
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
 
-        write!(out, "{}", resp.name)?;
+        write!(out, "{}", name)?;
 
         Ok(RenderStatus::Rendered)
     }
@@ -184,7 +217,7 @@ const TEMP_COLORS: [u8; 57] = [
     220, 220, 220, 214, 214, 214, 208, 208, 208, 202, 202, 202, 196,
 ];
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Temperature {
     pub display_mode: Option<DisplayMode>,
@@ -193,7 +226,7 @@ pub struct Temperature {
     pub style: ScaledColor,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(untagged, rename_all = "snake_case")]
 pub enum ScaledColor {
     #[serde(with = "scaled_color")]
@@ -243,8 +276,9 @@ impl Temperature {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
+        let resp = resp.as_current()?;
         let temp = resp.main.temp;
         let feels_like = resp.main.feels_like;
         let temp_min = resp.main.temp_min;
@@ -282,7 +316,7 @@ impl Temperature {
     }
 }
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct WeatherIcon {
     pub display_mode: Option<DisplayMode>,
@@ -433,28 +467,30 @@ impl WeatherIcon {
         out: &mut StandardStream,
         _: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
+        let resp = resp.as_current()?;
+        let sunset = resp.sys.sunset;
+        let sunrise = resp.sys.sunrise;
+        let wind = resp.wind.as_ref();
+        let id = resp.weather[0].id;
+
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
 
         let now = Utc::now();
-        let night =
-            now >= Utc.timestamp(resp.sys.sunset, 0) || now <= Utc.timestamp(resp.sys.sunrise, 0);
+        let night = now >= Utc.timestamp(sunset, 0) || now <= Utc.timestamp(sunrise, 0);
 
         display_print!(
             out,
             display_mode,
             {
-                let wind_type = resp
-                    .wind
-                    .as_ref()
-                    .map_or(WindType::Low, |w| get_wind_type(w.speed));
+                let wind_type = wind.map_or(WindType::Low, |w| get_wind_type(w.speed));
 
-                self.get_icon(resp.weather[0].id, night, &wind_type)
+                self.get_icon(id, night, &wind_type)
             },
-            format!("{}\u{fe0f}", self.get_unicode(resp.weather[0].id, night)),
+            format!("{}\u{fe0f}", self.get_unicode(id, night)),
             {
                 warn!("no weather icon to display in ascii mode!");
                 ""
@@ -479,7 +515,7 @@ fn get_wind_type(speed: f32) -> WindType {
     }
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct WeatherDescription {
     #[serde(with = "option_color_spec")]
@@ -492,13 +528,15 @@ impl WeatherDescription {
         out: &mut StandardStream,
         _: &ColorSpec,
         _: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
+        let description = &resp.as_current()?.weather[0].description;
+
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
 
-        write!(out, "{}", resp.weather[0].description)?;
+        write!(out, "{}", description)?;
 
         Ok(RenderStatus::Rendered)
     }
@@ -518,7 +556,7 @@ const WIND_DIR_UNICODE: &str =
 
 const WIND_DIR_ASCII: &str = " S  SW W  NW N  NE E  SE S ";
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct WindSpeed {
     pub display_mode: Option<DisplayMode>,
@@ -583,9 +621,11 @@ impl WindSpeed {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
-        if let Some(w) = &resp.wind {
+        let wind = resp.as_current()?.wind.as_ref();
+
+        if let Some(w) = wind {
             self.display_wind(out, w, base_style, display_mode)?;
             Ok(RenderStatus::Rendered)
         } else {
@@ -596,7 +636,7 @@ impl WindSpeed {
 
 const HUMIDITY_COLORS: [u8; 11] = [220, 226, 190, 118, 82, 46, 48, 50, 51, 45, 39];
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Humidity {
     pub display_mode: Option<DisplayMode>,
@@ -637,15 +677,17 @@ impl Humidity {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
-        self.display_humidity(out, resp.main.humidity, base_style, display_mode)?;
+        let humidity = resp.as_current()?.main.humidity;
+
+        self.display_humidity(out, humidity, base_style, display_mode)?;
 
         Ok(RenderStatus::Rendered)
     }
 }
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Rain {
     pub display_mode: Option<DisplayMode>,
@@ -659,9 +701,11 @@ impl Rain {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
-        if let Some(r) = &resp.rain {
+        let rain = resp.as_current()?.rain.as_ref();
+
+        if let Some(r) = rain {
             if let Some(mm) = r.one_h.or(r.three_h) {
                 display_print!(out, display_mode, "\u{e371}", "\u{2614}", "R");
                 if let Some(ref style) = self.style {
@@ -680,7 +724,7 @@ impl Rain {
     }
 }
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Snow {
     pub display_mode: Option<DisplayMode>,
@@ -694,9 +738,11 @@ impl Snow {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
-        if let Some(r) = &resp.snow {
+        let snow = resp.as_current()?.snow.as_ref();
+
+        if let Some(r) = snow {
             if let Some(mm) = r.one_h.or(r.three_h) {
                 display_print!(out, display_mode, "\u{f2dc}", "\u{2744}\u{fe0f}", "S");
                 if let Some(ref style) = self.style {
@@ -715,7 +761,7 @@ impl Snow {
     }
 }
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Pressure {
     pub display_mode: Option<DisplayMode>,
@@ -748,15 +794,17 @@ impl Pressure {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
-        self.display_pressure(out, resp.main.pressure, base_style, display_mode)?;
+        let pressure = resp.as_current()?.main.pressure;
+
+        self.display_pressure(out, pressure, base_style, display_mode)?;
 
         Ok(RenderStatus::Rendered)
     }
 }
 
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct CloudCover {
     pub display_mode: Option<DisplayMode>,
@@ -789,9 +837,11 @@ impl CloudCover {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &CurrentResponse,
+        resp: &Response,
     ) -> Result<RenderStatus> {
-        if let Some(ref clouds) = resp.clouds {
+        let clouds = resp.as_current()?.clouds.as_ref();
+
+        if let Some(clouds) = clouds {
             self.display_cover(out, clouds.all, base_style, display_mode)?;
         }
 

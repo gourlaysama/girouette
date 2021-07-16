@@ -28,8 +28,8 @@ pub struct CurrentResponse {
 
 #[derive(serde::Deserialize, Debug)]
 pub struct Coord {
-    pub lat: f32,
-    pub lon: f32,
+    pub lat: f64,
+    pub lon: f64,
 }
 
 #[derive(serde::Deserialize, Debug)]

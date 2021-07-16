@@ -32,7 +32,7 @@ impl Default for ProgramConfig {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(default)]
 pub struct DisplayConfig {
     #[serde(with = "FakeColorSpec")]
