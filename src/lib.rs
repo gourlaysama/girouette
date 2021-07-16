@@ -1,8 +1,8 @@
+pub mod api;
 pub mod cli;
 pub mod config;
 #[cfg(feature = "geoclue")]
 pub mod geoclue;
-pub mod response;
 pub mod segments;
 mod serde_utils;
 
@@ -12,7 +12,7 @@ use anyhow::*;
 use directories_next::ProjectDirs;
 use log::*;
 use reqwest::StatusCode;
-use response::{ApiResponse, WeatherResponse};
+use api::current::{ApiResponse, CurrentResponse};
 use serde::{Deserialize, Serialize};
 use tokio::time::timeout;
 
@@ -148,7 +148,7 @@ impl WeatherClient {
         &self,
         location: &Location,
         language: Option<&str>,
-    ) -> Result<Option<WeatherResponse>> {
+    ) -> Result<Option<CurrentResponse>> {
         if let Some(cache_length) = self.cache_length {
             let path = self.find_cache_for(location, language)?;
 
@@ -185,7 +185,7 @@ impl WeatherClient {
         location: Location,
         key: String,
         language: Option<&str>,
-    ) -> Result<WeatherResponse> {
+    ) -> Result<CurrentResponse> {
         match self.query_cache(&location, language) {
             Ok(Some(resp)) => return Ok(resp),
             Ok(None) => {}
@@ -202,7 +202,7 @@ impl WeatherClient {
         location: Location,
         key: String,
         language: Option<&str>,
-    ) -> Result<WeatherResponse> {
+    ) -> Result<CurrentResponse> {
         debug!("querying {:?}", location);
         let mut params = Vec::with_capacity(3);
         match &location {
@@ -263,7 +263,7 @@ fn handle_error(
     error_code: StatusCode,
     message: &str,
     location: Location,
-) -> Result<WeatherResponse> {
+) -> Result<CurrentResponse> {
     match error_code {
         StatusCode::NOT_FOUND => bail!("location error: '{}' for '{}'", message, location),
         StatusCode::TOO_MANY_REQUESTS => bail!("Too many calls to the API! If you not using your own API key, please get your own for free over at http://openweathermap.org"),

@@ -1,5 +1,5 @@
 use crate::{config::*, serde_utils::*};
-use crate::{response::Wind, DisplayMode, WeatherResponse, WindType};
+use crate::{api::current::Wind, DisplayMode, CurrentResponse, WindType};
 use anyhow::Result;
 use chrono::{FixedOffset, TimeZone, Utc};
 use log::*;
@@ -35,7 +35,7 @@ impl Renderer {
         Renderer { display_config }
     }
 
-    pub fn render(&mut self, out: &mut StandardStream, resp: &WeatherResponse) -> Result<()> {
+    pub fn render(&mut self, out: &mut StandardStream, resp: &CurrentResponse) -> Result<()> {
         if self.display_config.segments.is_empty() {
             warn!("there are not segments to display!");
             return Ok(());
@@ -90,7 +90,7 @@ impl Segment {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         match self {
             Segment::Instant(i) => i.render(out, base_style, display_mode, resp),
@@ -135,7 +135,7 @@ impl Instant {
         out: &mut StandardStream,
         _: &ColorSpec,
         _: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         let source_date = FixedOffset::east(resp.timezone).timestamp(resp.dt, 0);
 
@@ -166,7 +166,7 @@ impl LocationName {
         out: &mut StandardStream,
         _: &ColorSpec,
         _: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         if let Some(ref style) = self.style {
             out.set_color(style)?;
@@ -243,7 +243,7 @@ impl Temperature {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         let temp = resp.main.temp;
         let feels_like = resp.main.feels_like;
@@ -433,7 +433,7 @@ impl WeatherIcon {
         out: &mut StandardStream,
         _: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         if let Some(ref style) = self.style {
             out.set_color(style)?;
@@ -492,7 +492,7 @@ impl WeatherDescription {
         out: &mut StandardStream,
         _: &ColorSpec,
         _: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         if let Some(ref style) = self.style {
             out.set_color(style)?;
@@ -583,7 +583,7 @@ impl WindSpeed {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         if let Some(w) = &resp.wind {
             self.display_wind(out, w, base_style, display_mode)?;
@@ -637,7 +637,7 @@ impl Humidity {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         self.display_humidity(out, resp.main.humidity, base_style, display_mode)?;
 
@@ -659,7 +659,7 @@ impl Rain {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         if let Some(r) = &resp.rain {
             if let Some(mm) = r.one_h.or(r.three_h) {
@@ -694,7 +694,7 @@ impl Snow {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         if let Some(r) = &resp.snow {
             if let Some(mm) = r.one_h.or(r.three_h) {
@@ -748,7 +748,7 @@ impl Pressure {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         self.display_pressure(out, resp.main.pressure, base_style, display_mode)?;
 
@@ -789,7 +789,7 @@ impl CloudCover {
         out: &mut StandardStream,
         base_style: &ColorSpec,
         display_mode: DisplayMode,
-        resp: &WeatherResponse,
+        resp: &CurrentResponse,
     ) -> Result<RenderStatus> {
         if let Some(ref clouds) = resp.clouds {
             self.display_cover(out, clouds.all, base_style, display_mode)?;
