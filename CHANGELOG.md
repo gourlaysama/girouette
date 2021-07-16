@@ -5,20 +5,6 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
-### Added
-
-* New `cloud_cover` segment to show the current cloud cover in %.
-* New `-v/-q` pair of short options to respectively increase/decrease verbosity. The options can be stacked (`-vvv`). The default verbosity level is `warn` (from `off`, `error`, `warn`, `info`, `debug`, `trace`), with the cli arguments overriding the `GIROUETTE_LOG` environment variable. `-qq` silences all output except weather segments.
-* New `timeout` config option to decide how long to wait for a response from Openweather, or for a location from Geoclue. The default is 10 seconds.
-
-### Changed
-
-* Geoclue must now return a location within the `timeout` given in the configuration (instead of a hardcoded 1 second) before we give up and return an error.
-
-### Fixed
-
-* Unicode weather icons are now printed in Emoji mode, if supported by the font (using the emoji variation selector).
-
 ## [0.5.1] - 2021-05-20
 
 ### Added
