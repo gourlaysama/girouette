@@ -192,8 +192,9 @@ See the default configuration file [config.yml](config.yml) and browse the [exam
   * `instant`: the date/time of the weather measure. Has a single attribute:
     * `date_format` (string): how to format the date/time. Takes a [mostly C-style format][chrono format].
   * `location_name` (string): the location name from the weather mesure. This isn't always the same as the queried location.
-  * `temperature`: the temperature. The `style` attribute takes an additional `scaled` value to use an (hardcoded) color scale that varies with the temperature (this is the default). Has a single attribute:
+  * `temperature`: the temperature. The `style` attribute takes an additional `scaled` value to use an (hardcoded) color scale that varies with the temperature (this is the default). Has a two attributes:
     * `feels_like` (boolean): if yes, also displays the (estimated) felt-like temperature (takes into account wind/humidity/...).
+    * `min_max` (boolean): if yes, also show daily minimum and maximum temperatures. Defaults to false.
   * `weather_icon`: a single icon summarizing the weather.
   * `weather_description`: a textual description of the weather.
   * `rain`: the amount of falling rain (if any).
