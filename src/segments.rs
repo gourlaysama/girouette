@@ -189,6 +189,7 @@ const TEMP_COLORS: [u8; 57] = [
 pub struct Temperature {
     pub display_mode: Option<DisplayMode>,
     pub feels_like: bool,
+    pub min_max: bool,
     pub style: ScaledColor,
 }
 
@@ -231,7 +232,7 @@ impl Temperature {
             _ => {}
         }
 
-        write!(out, " {:.1}", temp)?;
+        write!(out, "{:.1}", temp)?;
         out.set_color(base_style)?;
         write!(out, " °C")?;
         Ok(())
@@ -244,14 +245,36 @@ impl Temperature {
         display_mode: DisplayMode,
         resp: &WeatherResponse,
     ) -> Result<RenderStatus> {
+        let temp = resp.main.temp;
+        let feels_like = resp.main.feels_like;
+        let temp_min = resp.main.temp_min;
+        let temp_max = resp.main.temp_max;
+
         let display_mode = self.display_mode.unwrap_or(display_mode);
 
-        display_print!(out, display_mode, "\u{e350}", "T", "T");
-
-        self.display_temp(out, resp.main.temp, base_style)?;
+        if self.min_max {
+            display_print!(out, display_mode, " \u{f175}", " \u{2b07}\u{fe0f} ", " (m ");
+            self.display_temp(out, temp_min, base_style)?;
+            display_print!(
+                out,
+                display_mode,
+                " \u{e350} ",
+                " \u{1f321}\u{fe0f} ",
+                " T "
+            );
+            self.display_temp(out, temp, base_style)?;
+            display_print!(out, display_mode, " \u{f176}", " \u{2b06}\u{fe0f} ", " M ");
+            self.display_temp(out, temp_max, base_style)?;
+            if let DisplayMode::Ascii = display_mode {
+                write!(out, ")")?;
+            }
+        } else {
+            display_print!(out, display_mode, "\u{e350} ", "\u{1f321}\u{fe0f} ", "T ");
+            self.display_temp(out, temp, base_style)?;
+        }
         if self.feels_like {
-            write!(out, " (feels")?;
-            self.display_temp(out, resp.main.feels_like, base_style)?;
+            write!(out, " (feels ")?;
+            self.display_temp(out, feels_like, base_style)?;
             write!(out, ")")?;
         }
 
