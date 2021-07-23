@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Changes
+
+* In Unicode mode, temperature is now indicated by a unicode thermometer (🌡️ ,`U+1f321 U+fe0f`) instead of the letter `T`.
 
 ## [0.5.1] - 2021-05-20
 

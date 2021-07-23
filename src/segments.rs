@@ -246,7 +246,13 @@ impl Temperature {
     ) -> Result<RenderStatus> {
         let display_mode = self.display_mode.unwrap_or(display_mode);
 
-        display_print!(out, display_mode, "\u{e350}", "T", "T");
+        display_print!(
+            out,
+            display_mode,
+            " \u{e350} ",
+            " \u{1f321}\u{fe0f} ",
+            " T "
+        );
 
         self.display_temp(out, resp.main.temp, base_style)?;
         if self.feels_like {
