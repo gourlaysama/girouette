@@ -10,7 +10,7 @@
 
 ### Changes
 
-* In Unicode mode, temperature is now indicated by a unicode thermometer (🌡️ ,`U+1f321 U+fe0f`) instead of the letter `T`.
+* In Unicode mode, temperature is now indicated by a Unicode thermometer (🌡️ ,`U+1f321 U+fe0f`) instead of the letter `T`.
 
 ### Features
 
@@ -21,12 +21,12 @@
 ### Added
 
 * New `cloud_cover` segment to show the current cloud cover in %.
-* New `-v/-q` pair of short options to respectively increase/decrease verbosity. The options can be stacked (`-vvv`). The default verbosity level is `warn` (from `off`, `error`, `warn`, `info`, `debug`, `trace`), with the cli arguments overriding the `GIROUETTE_LOG` environment variable. `-qq` silences all output except weather segments.
+* New `-v/-q` pair of short options to respectively increase/decrease verbosity. The options can be stacked (`-vvv`). The default verbosity level is `warn` (from `off`, `error`, `warn`, `info`, `debug`, `trace`), with the CLI arguments overriding the `GIROUETTE_LOG` environment variable. `-qq` silences all output except weather segments.
 * New `timeout` config option to decide how long to wait for a response from Openweather, or for a location from Geoclue. The default is 10 seconds.
 
 ### Changed
 
-* Geoclue must now return a location within the `timeout` given in the configuration (instead of a hardcoded 1 second) before we give up and return an error.
+* Geoclue must now return a location within the `timeout` given in the configuration (instead of a hard-coded 1 second) before we give up and return an error.
 
 ### Fixed
 
@@ -36,14 +36,14 @@
 
 ### Added
 
-* Localization support: added new `-L/--language` cli & config option to choose the output language for location names and weather descriptions. Possible values are any 2-letter language code supported by OpenWeather.
+* Localization support: added new `-L/--language` CLI & config option to choose the output language for location names and weather descriptions. Possible values are any 2-letter language code supported by OpenWeather.
 
 ## [0.4.3] - 2021-02-10
 
 ### Added
 
 * New `snow` segment to show the current snowfall level (in mm in the last hour, like with rainfall).
-* More descriptive `--version` output: now shows the build environment and if autolocalization is supported.
+* More descriptive `--version` output: now shows the build environment and if geolocation is supported.
 
 ## [0.4.2] - 2021-02-09
 
@@ -53,7 +53,7 @@
 
 ### Changed
 
-* The hardcoded location was removed from the default config. The default is now `auto` if geolocalization is enabled, and setting it using `-l/--location` (or in the config) is needed otherwise.
+* The hard-coded location was removed from the default config. The default is now `auto` if geolocation is enabled, and setting it using `-l/--location` (or in the config) is needed otherwise.
 
 ## [0.4.1] - 2021-02-03
 
@@ -77,13 +77,13 @@
 
 ### Added
 
-* Release binaries are now published to the corresponding Github release.
+* Release binaries are now published to the corresponding GitHub release.
 
 ## [0.3.1] - 2021-01-14
 
 ### Added
 
-* Trying girouette without registering an OpenWeather API key is now possible (using an hardcoded key).
+* Trying girouette without registering an OpenWeather API key is now possible (using an hard-coded key).
 * New `--clean-cache` option to empty the cache used when API responses are cached to disk.
 
 ### Changed
@@ -123,7 +123,7 @@
 
 ### Added
 
-* Support for ASCII and unicode (emoji) output.
+* Support for ASCII and Unicode (emoji) output.
 * Support reading configuration from a file at `$XDG_CONFIG_HOME/girouette/config.yml`
    (`{%USERPROFILE%\AppData\Roaming\girouette\config.yml` on Windows,
    `$HOME/Library/Preferences/rs.girouette/config.yml` on macOS). Fallback is the
@@ -132,7 +132,7 @@
 
 ### Changed
 
-* The default display mode is now `unicode`: it will only use unicode (including emoji)
+* The default display mode is now `unicode`: it will only use Unicode (including emoji)
   characters. Support for Nerd Fonts is still available with `display_mode: "nerd_fonts"`,
   both globally and per-segment.
 * Renamed to project to girouette; weather was just a placeholder, really.
@@ -142,7 +142,7 @@
 
 ### Fixed
 
-* Ignore the `visibility` value from Openweather (instead of throwing an error if missing).
+* Ignore the `visibility` value from OpenWeather (instead of throwing an error if missing).
 * Avoid adding double separators when a segment has no output (if there is no rain, etc.).
 
 ## [0.1.0] - 2020-03-23

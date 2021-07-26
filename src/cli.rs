@@ -62,7 +62,7 @@ pub struct ProgramOptions {
     #[structopt(long)]
     /// Removes all cached responses and exits.
     ///
-    /// This empties the cache directory used when caching reponses with "-c/--cache".
+    /// This empties the cache directory used when caching responses with "-c/--cache".
     ///
     /// By default, girouette puts the cache in:
     ///
