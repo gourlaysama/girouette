@@ -207,6 +207,7 @@ pub(crate) mod segment_vec {
                             "rain" => Segment::Rain(Rain::default()),
                             "pressure" => Segment::Pressure(Pressure::default()),
                             "cloud_cover" => Segment::CloudCover(CloudCover::default()),
+                            "daily_forecast" => Segment::DailyForecast(DailyForecast::default()),
                             a => {
                                 return Err(de::Error::unknown_variant(
                                     a,
@@ -220,6 +221,7 @@ pub(crate) mod segment_vec {
                                         "humidity",
                                         "rain",
                                         "pressure",
+                                        "daily_forecast",
                                     ],
                                 ))
                             }

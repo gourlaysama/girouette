@@ -11,6 +11,7 @@ pub enum ApiResponse {
 pub struct OneCallResponse {
     pub lat: f32,
     pub lon: f32,
+    pub timezone_offset: i32,
     pub current: WeatherData,
     pub minutely: Vec<MinutelyForecast>,
     pub hourly: Vec<WeatherData>,

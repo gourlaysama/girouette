@@ -2,7 +2,7 @@ use crate::api::Response;
 use crate::{api::current::Wind, DisplayMode, WindType};
 use crate::{config::*, serde_utils::*, QueryKind};
 use anyhow::*;
-use chrono::{FixedOffset, TimeZone, Utc};
+use chrono::{Datelike, FixedOffset, TimeZone, Utc};
 use log::*;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
@@ -104,6 +104,7 @@ pub enum Segment {
     Snow(Snow),
     Pressure(Pressure),
     CloudCover(CloudCover),
+    DailyForecast(DailyForecast),
 }
 
 impl Segment {
@@ -126,12 +127,12 @@ impl Segment {
             Segment::Snow(i) => i.render(out, base_style, display_mode, resp),
             Segment::Pressure(i) => i.render(out, base_style, display_mode, resp),
             Segment::CloudCover(c) => c.render(out, base_style, display_mode, resp),
+            Segment::DailyForecast(c) => c.render(out, base_style, display_mode, resp),
         }
     }
 
     pub fn is_forecast(&self) -> bool {
-        // No forecast segments have been added yet
-        false
+        matches!(self, Segment::DailyForecast(_))
     }
 }
 
@@ -242,35 +243,6 @@ impl Default for ScaledColor {
 }
 
 impl Temperature {
-    fn display_temp(
-        &self,
-        out: &mut StandardStream,
-        temp: f32,
-        base_style: &ColorSpec,
-    ) -> Result<()> {
-        match &self.style {
-            ScaledColor::Scaled => {
-                let temp_idx = (temp.round() + 16f32).min(57f32).max(0f32) as usize;
-
-                out.set_color(
-                    base_style
-                        .clone()
-                        .set_fg(Some(Color::Ansi256(TEMP_COLORS[temp_idx])))
-                        .set_bold(true),
-                )?;
-            }
-            ScaledColor::Spec(Some(style)) => {
-                out.set_color(style)?;
-            }
-            _ => {}
-        }
-
-        write!(out, "{:.1}", temp)?;
-        out.set_color(base_style)?;
-        write!(out, " °C")?;
-        Ok(())
-    }
-
     fn render(
         &self,
         out: &mut StandardStream,
@@ -288,7 +260,7 @@ impl Temperature {
 
         if self.min_max {
             display_print!(out, display_mode, " \u{f175}", " \u{2b07}\u{fe0f} ", " (m ");
-            self.display_temp(out, temp_min, base_style)?;
+            display_temp(&self.style, out, temp_min, base_style)?;
             display_print!(
                 out,
                 display_mode,
@@ -296,19 +268,19 @@ impl Temperature {
                 " \u{1f321}\u{fe0f} ",
                 " T "
             );
-            self.display_temp(out, temp, base_style)?;
+            display_temp(&self.style, out, temp, base_style)?;
             display_print!(out, display_mode, " \u{f176}", " \u{2b06}\u{fe0f} ", " M ");
-            self.display_temp(out, temp_max, base_style)?;
+            display_temp(&self.style, out, temp_max, base_style)?;
             if let DisplayMode::Ascii = display_mode {
                 write!(out, ")")?;
             }
         } else {
             display_print!(out, display_mode, "\u{e350} ", "\u{1f321}\u{fe0f} ", "T ");
-            self.display_temp(out, temp, base_style)?;
+            display_temp(&self.style, out, temp, base_style)?;
         }
         if self.feels_like {
             write!(out, " (feels ")?;
-            self.display_temp(out, feels_like, base_style)?;
+            display_temp(&self.style, out, feels_like, base_style)?;
             write!(out, ")")?;
         }
 
@@ -325,140 +297,42 @@ pub struct WeatherIcon {
 }
 
 impl WeatherIcon {
-    fn get_icon(&self, id: u16, night: bool, wind_type: &WindType) -> &'static str {
-        match (night, id) {
-            // thunderstorm + rain
-            (true, 200..=209) => "\u{e32a}",
-            (false, 200..=209) => "\u{e30f}",
-            // thunderstorm
-            (true, 210..=219) | (true, 221) => "\u{e332}",
-            (false, 210..=219) | (false, 221) => "\u{e305}",
-            // thunderstorm + sleet/drizzle
-            (true, 230..=239) => "\u{e364}",
-            (false, 230..=239) => "\u{e362}",
-            // sprinkle
-            (true, 300..=309) | (true, 310..=312) => "\u{e328}",
-            (false, 300..=309) | (false, 310..=312) => "\u{e30b}",
-            // rain
-            (true, 500..=509) => "\u{e325}",
-            (false, 500..=509) => "\u{e308}",
-            // freezing rain
-            (true, 511) => "\u{e321}",
-            (false, 511) => "\u{e304}",
-            // showers
-            (true, 520..=529) | (true, 313..=319) | (true, 531) => "\u{e326}",
-            (false, 520..=529) | (false, 313..=319) | (false, 531) => "\u{e309}",
-            // snow
-            (true, 600..=609) => "\u{e327}",
-            (false, 600..=609) => "\u{e30a}",
-            // sleet
-            (true, 611..=615) => "\u{e3ac}",
-            (false, 613..=615) => "\u{e3aa}",
-            // rain/snow mix
-            (true, 620..=629) | (true, 616) => "\u{e331}",
-            (false, 620..=629) | (false, 616) => "\u{e306}",
-            // mist
-            (true, 701) => "\u{e320}",
-            (false, 701) => "\u{e311}",
-            // smoke
-            (_, 711) => "\u{e35c}",
-            // haze
-            (false, 721) => "\u{e36b}",
-            // dust
-            (_, 731) | (_, 761) => "\u{e35d}",
-            // fog
-            (true, 741) => "\u{e346}",
-            (false, 741) => "\u{e303}",
-            // sandstorm
-            (_, 751) => "\u{e37a}",
-            // volcanic ash
-            (_, 762) => "\u{e3c0}",
-            // squalls
-            (_, 771) => "\u{e34b}",
-            // tornado
-            (_, 781) => "\u{e351}",
-            // clear
-            (true, 800) => "\u{e32b}",
-            (false, 800) => match wind_type {
-                WindType::High => "\u{e37d}",
-                WindType::Mid => "\u{e3bc}",
-                WindType::Low => "\u{e30d}",
-            },
-            // clouds 25-50%
-            (true, 801) => "\u{e379}",
-            (false, 801) => "\u{e30c}",
-            // clouds >=50%
-            (true, 802..=809) => match wind_type {
-                WindType::High => "\u{e31f}",
-                WindType::Mid => "\u{e320}",
-                WindType::Low => "\u{e37e}",
-            },
-            (false, 802..=809) => match wind_type {
-                WindType::High => "\u{e300}",
-                WindType::Mid => "\u{e301}",
-                WindType::Low => "\u{e302}",
-            },
-            (a, b) => {
-                debug!("no icon for (night: {}, code: {}); using fallback", a, b);
-                "\u{e374}"
-            }
+    fn render_icon(
+        out: &mut StandardStream,
+        display_mode: DisplayMode,
+        style: &Option<ColorSpec>,
+        sunset: Option<i64>,
+        sunrise: Option<i64>,
+        wind: Option<&Wind>,
+        id: u16,
+    ) -> Result<RenderStatus> {
+        if let Some(ref style) = style {
+            out.set_color(style)?;
         }
-    }
 
-    fn get_unicode(&self, id: u16, night: bool) -> &'static str {
-        match (night, id) {
-            // thunderstorm + rain
-            (_, 200..=209) => "\u{26c8}",
-            // thunderstorm
-            (_, 210..=219) | (_, 221) | (_, 230..=239) => "\u{1f329}",
-            // rain (all types)
-            (true, 300..=309)
-            | (true, 310..=312)
-            | (true, 500..=509)
-            | (true, 511)
-            | (true, 520..=529)
-            | (true, 313..=319)
-            | (true, 531)
-            | (true, 611..=615)
-            | (true, 620..=629)
-            | (true, 616) => "\u{1f327}",
-            (false, 300..=309)
-            | (false, 310..=312)
-            | (false, 500..=509)
-            | (false, 511)
-            | (false, 520..=529)
-            | (false, 313..=319)
-            | (false, 531)
-            | (false, 613..=615)
-            | (false, 620..=629)
-            | (false, 616) => "\u{1f326}",
-            // snow
-            (_, 600..=609) => "\u{1f328}",
-            // mist/fog/smoke/haze/dust/sandstorm/ash
-            (_, 701)
-            | (_, 711)
-            | (false, 721)
-            | (_, 731)
-            | (_, 761)
-            | (_, 741)
-            | (_, 751)
-            | (_, 762) => "\u{1f32b}",
-            // squalls
-            (_, 771) => "\u{1f32c}",
-            // tornado
-            (_, 781) => "\u{1f32a}",
-            // clear
-            (true, 800) => "\u{263e}",
-            (false, 800) => "\u{1f31e}",
-            // clouds 25-50%
-            (false, 801) => "\u{1f324}",
-            // clouds >=50%
-            (true, 801..=809) => "\u{2601}",
-            (false, 802..=809) => "\u{26c5}",
-            (a, b) => {
-                debug!("no unicode for (night: {}, code: {}); using fallback", a, b);
-                "\u{e374}"
-            }
+        let now = Utc::now();
+        let night = if let (Some(sunset), Some(sunrise)) = (sunset, sunrise) {
+            now >= Utc.timestamp(sunset, 0) || now <= Utc.timestamp(sunrise, 0)
+        } else {
+            false
+        };
+
+        display_print!(
+            out,
+            display_mode,
+            {
+                let wind_type = wind.map_or(WindType::Low, |w| get_wind_type(w.speed));
+
+                get_icon(id, night, &wind_type)
+            },
+            format!("{}\u{fe0f}", get_unicode(id, night)),
+            { "" }
+        );
+
+        if let DisplayMode::Ascii = display_mode {
+            Ok(RenderStatus::Empty)
+        } else {
+            Ok(RenderStatus::Rendered)
         }
     }
 
@@ -475,33 +349,19 @@ impl WeatherIcon {
         let wind = resp.wind.as_ref();
         let id = resp.weather[0].id;
 
-        if let Some(ref style) = self.style {
-            out.set_color(style)?;
+        if let DisplayMode::Ascii = display_mode {
+            warn!("no weather icon to display in ascii mode!");
         }
 
-        let now = Utc::now();
-        let night = now >= Utc.timestamp(sunset, 0) || now <= Utc.timestamp(sunrise, 0);
-
-        display_print!(
+        WeatherIcon::render_icon(
             out,
             display_mode,
-            {
-                let wind_type = wind.map_or(WindType::Low, |w| get_wind_type(w.speed));
-
-                self.get_icon(id, night, &wind_type)
-            },
-            format!("{}\u{fe0f}", self.get_unicode(id, night)),
-            {
-                warn!("no weather icon to display in ascii mode!");
-                ""
-            }
-        );
-
-        if let DisplayMode::Ascii = display_mode {
-            Ok(RenderStatus::Empty)
-        } else {
-            Ok(RenderStatus::Rendered)
-        }
+            &self.style,
+            Some(sunset),
+            Some(sunrise),
+            wind,
+            id,
+        )
     }
 }
 
@@ -846,5 +706,249 @@ impl CloudCover {
         }
 
         Ok(RenderStatus::Rendered)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct DailyForecast {
+    pub display_mode: Option<DisplayMode>,
+    pub temp_style: ScaledColor,
+    #[serde(with = "option_color_spec")]
+    pub style: Option<ColorSpec>,
+    pub days: u8,
+}
+
+impl Default for DailyForecast {
+    fn default() -> Self {
+        Self {
+            display_mode: Default::default(),
+            temp_style: Default::default(),
+            style: Default::default(),
+            days: 3,
+        }
+    }
+}
+
+impl DailyForecast {
+    fn render(
+        &self,
+        out: &mut StandardStream,
+        base_style: &ColorSpec,
+        display_mode: DisplayMode,
+        resp: &Response,
+    ) -> Result<RenderStatus> {
+        let resp = resp.as_forecast()?;
+        let timezone = FixedOffset::east(resp.timezone_offset);
+        let mut first = true;
+        out.set_color(base_style)?;
+
+        let end = resp.daily.len().min(1 + self.days as usize);
+
+        for i in 1..end {
+            let day = &resp.daily[i as usize];
+
+            let dt = day.dt;
+
+            if let crate::api::one_call::Temperature::Values(ref t) = day.temp {
+                if first {
+                    write!(out, " ")?;
+                    first = false;
+                } else {
+                    write!(out, "   ")?;
+                }
+                let source_date = timezone.timestamp(dt, 0);
+                write!(out, "{} ", source_date.weekday())?;
+
+                let wind = Wind {
+                    speed: day.wind_speed,
+                    deg: day.wind_deg,
+                    gale: day.wind_gust,
+                };
+
+                WeatherIcon::render_icon(
+                    out,
+                    display_mode,
+                    &self.style,
+                    None,
+                    None,
+                    Some(&wind),
+                    day.weather[0].id,
+                )?;
+                display_print!(out, display_mode, "  ", " ", "");
+
+                display_temp(&self.temp_style, out, t.day, base_style)?;
+
+                out.set_color(base_style)?;
+            }
+        }
+
+        Ok(RenderStatus::Rendered)
+    }
+}
+
+fn display_temp(
+    color_scale: &ScaledColor,
+    out: &mut StandardStream,
+    temp: f32,
+    base_style: &ColorSpec,
+) -> Result<()> {
+    match color_scale {
+        ScaledColor::Scaled => {
+            let temp_idx = (temp.round() + 16f32).min(57f32).max(0f32) as usize;
+
+            out.set_color(
+                base_style
+                    .clone()
+                    .set_fg(Some(Color::Ansi256(TEMP_COLORS[temp_idx])))
+                    .set_bold(true),
+            )?;
+        }
+        ScaledColor::Spec(Some(style)) => {
+            out.set_color(style)?;
+        }
+        _ => {}
+    }
+
+    write!(out, "{:.1}", temp)?;
+    out.set_color(base_style)?;
+    write!(out, " °C")?;
+    Ok(())
+}
+
+fn get_icon(id: u16, night: bool, wind_type: &WindType) -> &'static str {
+    match (night, id) {
+        // thunderstorm + rain
+        (true, 200..=209) => "\u{e32a}",
+        (false, 200..=209) => "\u{e30f}",
+        // thunderstorm
+        (true, 210..=219) | (true, 221) => "\u{e332}",
+        (false, 210..=219) | (false, 221) => "\u{e305}",
+        // thunderstorm + sleet/drizzle
+        (true, 230..=239) => "\u{e364}",
+        (false, 230..=239) => "\u{e362}",
+        // sprinkle
+        (true, 300..=309) | (true, 310..=312) => "\u{e328}",
+        (false, 300..=309) | (false, 310..=312) => "\u{e30b}",
+        // rain
+        (true, 500..=509) => "\u{e325}",
+        (false, 500..=509) => "\u{e308}",
+        // freezing rain
+        (true, 511) => "\u{e321}",
+        (false, 511) => "\u{e304}",
+        // showers
+        (true, 520..=529) | (true, 313..=319) | (true, 531) => "\u{e326}",
+        (false, 520..=529) | (false, 313..=319) | (false, 531) => "\u{e309}",
+        // snow
+        (true, 600..=609) => "\u{e327}",
+        (false, 600..=609) => "\u{e30a}",
+        // sleet
+        (true, 611..=615) => "\u{e3ac}",
+        (false, 613..=615) => "\u{e3aa}",
+        // rain/snow mix
+        (true, 620..=629) | (true, 616) => "\u{e331}",
+        (false, 620..=629) | (false, 616) => "\u{e306}",
+        // mist
+        (true, 701) => "\u{e320}",
+        (false, 701) => "\u{e311}",
+        // smoke
+        (_, 711) => "\u{e35c}",
+        // haze
+        (false, 721) => "\u{e36b}",
+        // dust
+        (_, 731) | (_, 761) => "\u{e35d}",
+        // fog
+        (true, 741) => "\u{e346}",
+        (false, 741) => "\u{e303}",
+        // sandstorm
+        (_, 751) => "\u{e37a}",
+        // volcanic ash
+        (_, 762) => "\u{e3c0}",
+        // squalls
+        (_, 771) => "\u{e34b}",
+        // tornado
+        (_, 781) => "\u{e351}",
+        // clear
+        (true, 800) => "\u{e32b}",
+        (false, 800) => match wind_type {
+            WindType::High => "\u{e37d}",
+            WindType::Mid => "\u{e3bc}",
+            WindType::Low => "\u{e30d}",
+        },
+        // clouds 25-50%
+        (true, 801) => "\u{e379}",
+        (false, 801) => "\u{e30c}",
+        // clouds >=50%
+        (true, 802..=809) => match wind_type {
+            WindType::High => "\u{e31f}",
+            WindType::Mid => "\u{e320}",
+            WindType::Low => "\u{e37e}",
+        },
+        (false, 802..=809) => match wind_type {
+            WindType::High => "\u{e300}",
+            WindType::Mid => "\u{e301}",
+            WindType::Low => "\u{e302}",
+        },
+        (a, b) => {
+            debug!("no icon for (night: {}, code: {}); using fallback", a, b);
+            "\u{e374}"
+        }
+    }
+}
+
+fn get_unicode(id: u16, night: bool) -> &'static str {
+    match (night, id) {
+        // thunderstorm + rain
+        (_, 200..=209) => "\u{26c8}",
+        // thunderstorm
+        (_, 210..=219) | (_, 221) | (_, 230..=239) => "\u{1f329}",
+        // rain (all types)
+        (true, 300..=309)
+        | (true, 310..=312)
+        | (true, 500..=509)
+        | (true, 511)
+        | (true, 520..=529)
+        | (true, 313..=319)
+        | (true, 531)
+        | (true, 611..=615)
+        | (true, 620..=629)
+        | (true, 616) => "\u{1f327}",
+        (false, 300..=309)
+        | (false, 310..=312)
+        | (false, 500..=509)
+        | (false, 511)
+        | (false, 520..=529)
+        | (false, 313..=319)
+        | (false, 531)
+        | (false, 613..=615)
+        | (false, 620..=629)
+        | (false, 616) => "\u{1f326}",
+        // snow
+        (_, 600..=609) => "\u{1f328}",
+        // mist/fog/smoke/haze/dust/sandstorm/ash
+        (_, 701)
+        | (_, 711)
+        | (false, 721)
+        | (_, 731)
+        | (_, 761)
+        | (_, 741)
+        | (_, 751)
+        | (_, 762) => "\u{1f32b}",
+        // squalls
+        (_, 771) => "\u{1f32c}",
+        // tornado
+        (_, 781) => "\u{1f32a}",
+        // clear
+        (true, 800) => "\u{263e}",
+        (false, 800) => "\u{1f31e}",
+        // clouds 25-50%
+        (false, 801) => "\u{1f324}",
+        // clouds >=50%
+        (true, 801..=809) => "\u{2601}",
+        (false, 802..=809) => "\u{26c5}",
+        (a, b) => {
+            debug!("no unicode for (night: {}, code: {}); using fallback", a, b);
+            "\u{e374}"
+        }
     }
 }
