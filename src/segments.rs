@@ -796,6 +796,7 @@ pub struct HourlyForecast {
     pub temp_style: ScaledColor,
     #[serde(with = "option_color_spec")]
     pub style: Option<ColorSpec>,
+    pub step: u8,
     pub hours: u8,
 }
 
@@ -805,6 +806,7 @@ impl Default for HourlyForecast {
             display_mode: Default::default(),
             temp_style: Default::default(),
             style: Default::default(),
+            step: 2,
             hours: 3,
         }
     }
@@ -823,10 +825,13 @@ impl HourlyForecast {
         let mut first = true;
         out.set_color(base_style)?;
 
-        let end = resp.hourly.len().min(1 + self.hours as usize);
+        let hours = self.hours as usize;
+        let step = 1.max(self.step as usize);
+        let end = resp.hourly.len();
 
-        for i in 1..end {
-            let day = &resp.hourly[i as usize];
+        let mut i = 0;
+        while i * step + 1 < end && i < hours {
+            let day = &resp.hourly[i * step + 1];
 
             let dt = day.dt;
 
@@ -861,6 +866,8 @@ impl HourlyForecast {
 
                 out.set_color(base_style)?;
             }
+
+            i += 1;
         }
 
         Ok(RenderStatus::Rendered)
