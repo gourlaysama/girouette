@@ -31,4 +31,5 @@ segments:
       style:
         fg: "#c4be89"
   - temperature
+  - hourly_forecast
   - daily_forecast

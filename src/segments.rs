@@ -105,6 +105,7 @@ pub enum Segment {
     Pressure(Pressure),
     CloudCover(CloudCover),
     DailyForecast(DailyForecast),
+    HourlyForecast(HourlyForecast),
 }
 
 impl Segment {
@@ -128,11 +129,12 @@ impl Segment {
             Segment::Pressure(i) => i.render(out, base_style, display_mode, resp),
             Segment::CloudCover(c) => c.render(out, base_style, display_mode, resp),
             Segment::DailyForecast(c) => c.render(out, base_style, display_mode, resp),
+            Segment::HourlyForecast(c) => c.render(out, base_style, display_mode, resp),
         }
     }
 
     pub fn is_forecast(&self) -> bool {
-        matches!(self, Segment::DailyForecast(_))
+        matches!(self, Segment::DailyForecast(_) | Segment::HourlyForecast(_))
     }
 }
 
@@ -778,6 +780,84 @@ impl DailyForecast {
                 display_print!(out, display_mode, "  ", " ", "");
 
                 display_temp(&self.temp_style, out, t.day, base_style)?;
+
+                out.set_color(base_style)?;
+            }
+        }
+
+        Ok(RenderStatus::Rendered)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct HourlyForecast {
+    pub display_mode: Option<DisplayMode>,
+    pub temp_style: ScaledColor,
+    #[serde(with = "option_color_spec")]
+    pub style: Option<ColorSpec>,
+    pub hours: u8,
+}
+
+impl Default for HourlyForecast {
+    fn default() -> Self {
+        Self {
+            display_mode: Default::default(),
+            temp_style: Default::default(),
+            style: Default::default(),
+            hours: 3,
+        }
+    }
+}
+
+impl HourlyForecast {
+    fn render(
+        &self,
+        out: &mut StandardStream,
+        base_style: &ColorSpec,
+        display_mode: DisplayMode,
+        resp: &Response,
+    ) -> Result<RenderStatus> {
+        let resp = resp.as_forecast()?;
+        let timezone = FixedOffset::east(resp.timezone_offset);
+        let mut first = true;
+        out.set_color(base_style)?;
+
+        let end = resp.hourly.len().min(1 + self.hours as usize);
+
+        for i in 1..end {
+            let day = &resp.hourly[i as usize];
+
+            let dt = day.dt;
+
+            if let crate::api::one_call::Temperature::Value(t) = day.temp {
+                if first {
+                    write!(out, " ")?;
+                    first = false;
+                } else {
+                    write!(out, "   ")?;
+                }
+                let source_date = timezone.timestamp(dt, 0);
+                write!(out, "{}h ", source_date.format("%k"))?;
+
+                let wind = Wind {
+                    speed: day.wind_speed,
+                    deg: day.wind_deg,
+                    gale: day.wind_gust,
+                };
+
+                WeatherIcon::render_icon(
+                    out,
+                    display_mode,
+                    &self.style,
+                    None,
+                    None,
+                    Some(&wind),
+                    day.weather[0].id,
+                )?;
+                display_print!(out, display_mode, "  ", " ", "");
+
+                display_temp(&self.temp_style, out, t, base_style)?;
 
                 out.set_color(base_style)?;
             }
