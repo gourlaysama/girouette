@@ -47,7 +47,7 @@ impl Renderer {
             out,
             &self.display_config.base_style,
             self.display_config.display_mode,
-            &resp,
+            resp,
         )?;
         for s in self.display_config.segments[1..].iter() {
             out.set_color(&self.display_config.base_style)?;
@@ -58,7 +58,7 @@ impl Renderer {
                 out,
                 &self.display_config.base_style,
                 self.display_config.display_mode,
-                &resp,
+                resp,
             )?;
         }
 
@@ -563,7 +563,7 @@ impl WindSpeed {
                 let speed_color_idx = speed.floor() as usize;
                 let mut tmp_style = base_style.clone();
                 stdout.set_color(
-                    &tmp_style.set_fg(Some(Color::Ansi256(WIND_COLORS[speed_color_idx]))),
+                    tmp_style.set_fg(Some(Color::Ansi256(WIND_COLORS[speed_color_idx]))),
                 )?;
             }
             ScaledColor::Spec(Some(style)) => {
@@ -586,7 +586,7 @@ impl WindSpeed {
         resp: &WeatherResponse,
     ) -> Result<RenderStatus> {
         if let Some(w) = &resp.wind {
-            self.display_wind(out, &w, base_style, display_mode)?;
+            self.display_wind(out, w, base_style, display_mode)?;
             Ok(RenderStatus::Rendered)
         } else {
             Ok(RenderStatus::Empty)

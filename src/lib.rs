@@ -109,7 +109,7 @@ impl WeatherClient {
         if let Some(p) = WeatherClient::directories() {
             let suffix = match location {
                 Location::LatLon(lat, lon) => format!("{}_{}", lat, lon),
-                Location::Place(p) => self.clean_up_for_path(&p),
+                Location::Place(p) => self.clean_up_for_path(p),
             };
             let f = if let Some(lang) = language {
                 format!("results/api-{}-{}.json", lang, suffix)
@@ -150,7 +150,7 @@ impl WeatherClient {
         language: Option<&str>,
     ) -> Result<Option<WeatherResponse>> {
         if let Some(cache_length) = self.cache_length {
-            let path = self.find_cache_for(&location, language)?;
+            let path = self.find_cache_for(location, language)?;
 
             if path.exists() {
                 let m = std::fs::metadata(&path)?;
