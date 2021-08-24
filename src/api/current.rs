@@ -1,14 +1,16 @@
+use super::*;
+
 #[derive(serde::Deserialize)]
 #[serde(untagged)]
 pub enum ApiResponse {
-    Success(WeatherResponse),
+    Success(CurrentResponse),
     // hack: Openweather API returns some very ugly json
     OtherInt { cod: u16, message: String },
     OtherString { cod: String, message: String },
 }
 
 #[derive(serde::Deserialize, Debug)]
-pub struct WeatherResponse {
+pub struct CurrentResponse {
     pub coord: Coord,
     pub weather: Vec<Weather>,
     pub main: Main,
@@ -26,16 +28,8 @@ pub struct WeatherResponse {
 
 #[derive(serde::Deserialize, Debug)]
 pub struct Coord {
-    pub lat: f32,
-    pub lon: f32,
-}
-
-#[derive(serde::Deserialize, Debug)]
-pub struct Weather {
-    pub id: u16,
-    pub main: String,
-    pub description: String,
-    pub icon: String,
+    pub lat: f64,
+    pub lon: f64,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -53,22 +47,6 @@ pub struct Wind {
     pub speed: f32,
     pub deg: Option<f32>,
     pub gale: Option<f32>,
-}
-
-#[derive(serde::Deserialize, Debug)]
-pub struct Rain {
-    #[serde(rename(deserialize = "1h"))]
-    pub one_h: Option<f32>,
-    #[serde(rename(deserialize = "3h"))]
-    pub three_h: Option<f32>,
-}
-
-#[derive(serde::Deserialize, Debug)]
-pub struct Snow {
-    #[serde(rename(deserialize = "1h"))]
-    pub one_h: Option<f32>,
-    #[serde(rename(deserialize = "3h"))]
-    pub three_h: Option<f32>,
 }
 
 #[derive(serde::Deserialize, Debug)]

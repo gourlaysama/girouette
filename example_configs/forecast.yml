@@ -1,0 +1,35 @@
+# Example config file for girouette
+
+# This is a default key for girouette. It is rate-limited, so
+# get a free API key over at https://openweathermap.org/
+key: "467cf0f1a1d612944d2da01c515c6f26"
+
+location: "London"
+
+cache: "10m"
+
+base_style:
+  bg: "#1b1d1e"
+  fg: "#f8f8f2"
+
+display_mode: "unicode"
+
+# Segments to display
+segments:
+  - instant:
+      style:
+        fg: "#fd971f"
+      date_format: "%R"
+  - location_name:
+      style:
+        fg: "#ae81ff"
+        intense: true
+  - weather_icon:
+      style:
+        fg: "#c4be89"
+  - weather_description:
+      style:
+        fg: "#c4be89"
+  - temperature
+  - hourly_forecast
+  - daily_forecast

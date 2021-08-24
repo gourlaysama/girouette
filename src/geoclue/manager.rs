@@ -154,7 +154,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn in_use(&self) -> nonblock::MethodReply<bool> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Manager",
             "InUse",
         )
@@ -162,7 +162,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn available_accuracy_level(&self) -> nonblock::MethodReply<u32> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Manager",
             "AvailableAccuracyLevel",
         )

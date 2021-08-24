@@ -1,22 +1,26 @@
+pub mod api;
 pub mod cli;
 pub mod config;
 #[cfg(feature = "geoclue")]
 pub mod geoclue;
-pub mod response;
 pub mod segments;
 mod serde_utils;
 
 use std::time::Duration;
 
+use crate::config::DisplayConfig;
 use anyhow::*;
+use api::{current::ApiResponse as CResponse, one_call::ApiResponse as OResponse, Response};
 use directories_next::ProjectDirs;
 use log::*;
 use reqwest::StatusCode;
-use response::{ApiResponse, WeatherResponse};
+use segments::Renderer;
 use serde::{Deserialize, Serialize};
+use termcolor::StandardStream;
 use tokio::time::timeout;
 
-const API_URL: &str = "https://api.openweathermap.org/data/2.5/weather?units=metric";
+const CURRENT_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather?units=metric";
+const ONECALL_API_URL: &str = "https://api.openweathermap.org/data/2.5/onecall?units=metric";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(from = "String", into = "String")]
@@ -70,7 +74,73 @@ impl Location {
     }
 }
 
-#[derive(Default)]
+pub struct Girouette {
+    config: DisplayConfig,
+    cache_length: Option<Duration>,
+    timeout: Duration,
+    key: String,
+    language: Option<String>,
+}
+
+impl Girouette {
+    pub fn new(
+        config: DisplayConfig,
+        cache_length: Option<Duration>,
+        timeout: Duration,
+        key: String,
+        language: Option<String>,
+    ) -> Self {
+        Self {
+            config,
+            cache_length,
+            timeout,
+            key,
+            language,
+        }
+    }
+
+    pub async fn display(&self, loc: &Location, out: &mut StandardStream) -> Result<()> {
+        let mut renderer = Renderer::from(&self.config);
+
+        let kind = renderer.display_kind()?;
+
+        let mut response = Response::empty();
+        if kind != QueryKind::ForeCast {
+            let res = WeatherClient::new(self.cache_length, self.timeout)
+                .query(
+                    QueryKind::Current,
+                    loc,
+                    self.key.clone(),
+                    self.language.as_deref(),
+                )
+                .await?;
+            response.merge(res);
+        }
+        let new_loc = if let Location::Place(_) = loc {
+            let resp = response.as_current()?;
+            Location::LatLon(resp.coord.lat, resp.coord.lon)
+        } else {
+            loc.clone()
+        };
+
+        if kind != QueryKind::Current {
+            let res = WeatherClient::new(self.cache_length, self.timeout)
+                .query(
+                    QueryKind::ForeCast,
+                    &new_loc,
+                    self.key.clone(),
+                    self.language.as_deref(),
+                )
+                .await?;
+            response.merge(res);
+        }
+
+        renderer.render(out, &response)?;
+
+        Ok(())
+    }
+}
+
 pub struct WeatherClient {
     client: reqwest::Client,
     cache_length: Option<Duration>,
@@ -103,21 +173,28 @@ impl WeatherClient {
 
     fn find_cache_for(
         &self,
+        kind: QueryKind,
         location: &Location,
         language: Option<&str>,
     ) -> Result<std::path::PathBuf> {
         if let Some(p) = WeatherClient::directories() {
+            let prefix = match kind {
+                QueryKind::Current => "api",
+                QueryKind::ForeCast => "oapi",
+                QueryKind::Both => bail!("internal error: find_cache_for(Both)"),
+            };
+
             let suffix = match location {
                 Location::LatLon(lat, lon) => format!("{}_{}", lat, lon),
-                Location::Place(p) => self.clean_up_for_path(&p),
+                Location::Place(p) => self.clean_up_for_path(p),
             };
             let f = if let Some(lang) = language {
-                format!("results/api-{}-{}.json", lang, suffix)
+                format!("results/{}-{}-{}.json", prefix, lang, suffix)
             } else {
-                format!("results/api-{}.json", suffix)
+                format!("results/{}-{}.json", prefix, suffix)
             };
             let file = p.cache_dir().join(f);
-            debug!("looking at cache file at '{}'", file.display());
+            debug!("looking for cache file at '{}'", file.display());
 
             if let Some(p) = file.parent() {
                 std::fs::create_dir_all(p)?;
@@ -146,20 +223,34 @@ impl WeatherClient {
 
     fn query_cache(
         &self,
+        kind: QueryKind,
         location: &Location,
         language: Option<&str>,
-    ) -> Result<Option<WeatherResponse>> {
+    ) -> Result<Option<Response>> {
         if let Some(cache_length) = self.cache_length {
-            let path = self.find_cache_for(&location, language)?;
+            let path = self.find_cache_for(kind, location, language)?;
 
             if path.exists() {
                 let m = std::fs::metadata(&path)?;
                 let elapsed = m.modified()?.elapsed()?;
                 if elapsed <= cache_length {
                     let f = std::fs::File::open(&path)?;
-                    if let ApiResponse::Success(resp) = serde_json::from_reader(f)? {
-                        info!("using cached response for {}", location);
-                        return Ok(Some(resp));
+                    match kind {
+                        QueryKind::Current => {
+                            if let CResponse::Success(resp) = serde_json::from_reader(f)? {
+                                info!("using cached response for {}", location);
+
+                                return Ok(Some(Response::from_current(resp)));
+                            }
+                        }
+                        QueryKind::ForeCast => {
+                            if let OResponse::Success(resp) = serde_json::from_reader(f)? {
+                                info!("using cached response for {}", location);
+
+                                return Ok(Some(Response::from_forecast(resp)));
+                            }
+                        }
+                        QueryKind::Both => bail!("internal error: query_cache(Both)"),
                     }
                 } else {
                     info!("ignoring expired cached response for {}", location);
@@ -172,8 +263,14 @@ impl WeatherClient {
         Ok(None)
     }
 
-    fn write_cache(&self, location: Location, language: Option<&str>, bytes: &[u8]) -> Result<()> {
-        let path = self.find_cache_for(&location, language)?;
+    fn write_cache(
+        &self,
+        kind: QueryKind,
+        location: &Location,
+        language: Option<&str>,
+        bytes: &[u8],
+    ) -> Result<()> {
+        let path = self.find_cache_for(kind, location, language)?;
         debug!("writing cache for {}", location);
         std::fs::write(path, bytes)?;
 
@@ -182,11 +279,12 @@ impl WeatherClient {
 
     pub async fn query(
         &self,
-        location: Location,
+        kind: QueryKind,
+        location: &Location,
         key: String,
         language: Option<&str>,
-    ) -> Result<WeatherResponse> {
-        match self.query_cache(&location, language) {
+    ) -> Result<Response> {
+        match self.query_cache(kind, location, language) {
             Ok(Some(resp)) => return Ok(resp),
             Ok(None) => {}
             Err(e) => {
@@ -194,18 +292,19 @@ impl WeatherClient {
             }
         }
 
-        self.query_api(location, key, language).await
+        self.query_api(kind, location, key, language).await
     }
 
     async fn query_api(
         &self,
-        location: Location,
+        kind: QueryKind,
+        location: &Location,
         key: String,
         language: Option<&str>,
-    ) -> Result<WeatherResponse> {
-        debug!("querying {:?}", location);
+    ) -> Result<Response> {
+        debug!("querying {:?} with '{:?}' OpenWeather API", location, kind);
         let mut params = Vec::with_capacity(3);
-        match &location {
+        match location {
             Location::LatLon(lat, lon) => {
                 params.push(("lat", lat.to_string()));
                 params.push(("lon", lon.to_string()));
@@ -219,7 +318,13 @@ impl WeatherClient {
 
         params.push(("appid", key));
 
-        let request = self.client.get(API_URL).query(&params).send();
+        let api_url = match kind {
+            QueryKind::Current => CURRENT_API_URL,
+            QueryKind::ForeCast => ONECALL_API_URL,
+            QueryKind::Both => bail!("internal error: query_api(Both)"),
+        };
+
+        let request = self.client.get(api_url).query(&params).send();
         let request = timeout(self.timeout, request);
 
         let response = request
@@ -238,32 +343,55 @@ impl WeatherClient {
             trace!("received response: {}", std::str::from_utf8(&bytes)?);
         }
 
-        let resp: ApiResponse = serde_json::from_slice(&bytes)?;
-
-        match resp {
-            ApiResponse::Success(w) => {
-                if self.cache_length.is_some() {
-                    if let Err(e) = self.write_cache(location, language.as_deref(), &bytes) {
-                        warn!("error while writing cached response: {}", e);
+        match kind {
+            QueryKind::Current => {
+                let resp: CResponse = serde_json::from_slice(&bytes)?;
+                match resp {
+                    CResponse::Success(w) => {
+                        if self.cache_length.is_some() {
+                            if let Err(e) =
+                                self.write_cache(kind, location, language.as_deref(), &bytes)
+                            {
+                                warn!("error while writing cached response: {}", e);
+                            }
+                        }
+                        Ok(Response::from_current(w))
+                    }
+                    CResponse::OtherInt { cod, message } => {
+                        handle_error(StatusCode::from_u16(cod)?, &message, location)
+                    }
+                    CResponse::OtherString { cod, message } => {
+                        handle_error(cod.parse()?, &message, location)
                     }
                 }
-                Ok(w)
             }
-            ApiResponse::OtherInt { cod, message } => {
-                handle_error(StatusCode::from_u16(cod)?, &message, location)
+            QueryKind::ForeCast => {
+                let resp: OResponse = serde_json::from_slice(&bytes)?;
+                match resp {
+                    OResponse::Success(w) => {
+                        if self.cache_length.is_some() {
+                            if let Err(e) =
+                                self.write_cache(kind, location, language.as_deref(), &bytes)
+                            {
+                                warn!("error while writing cached response: {}", e);
+                            }
+                        }
+                        Ok(Response::from_forecast(w))
+                    }
+                    OResponse::OtherInt { cod, message } => {
+                        handle_error(StatusCode::from_u16(cod)?, &message, location)
+                    }
+                    OResponse::OtherString { cod, message } => {
+                        handle_error(cod.parse()?, &message, location)
+                    }
+                }
             }
-            ApiResponse::OtherString { cod, message } => {
-                handle_error(cod.parse()?, &message, location)
-            }
+            QueryKind::Both => bail!("internal error: query_api(Both)"),
         }
     }
 }
 
-fn handle_error(
-    error_code: StatusCode,
-    message: &str,
-    location: Location,
-) -> Result<WeatherResponse> {
+fn handle_error(error_code: StatusCode, message: &str, location: &Location) -> Result<Response> {
     match error_code {
         StatusCode::NOT_FOUND => bail!("location error: '{}' for '{}'", message, location),
         StatusCode::TOO_MANY_REQUESTS => bail!("Too many calls to the API! If you not using your own API key, please get your own for free over at http://openweathermap.org"),
@@ -277,6 +405,13 @@ pub enum DisplayMode {
     NerdFonts,
     Unicode,
     Ascii,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum QueryKind {
+    Current,
+    ForeCast,
+    Both,
 }
 
 #[macro_export]

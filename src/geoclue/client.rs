@@ -146,7 +146,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn location(&self) -> nonblock::MethodReply<dbus::Path<'static>> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Client",
             "Location",
         )
@@ -154,7 +154,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn distance_threshold(&self) -> nonblock::MethodReply<u32> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Client",
             "DistanceThreshold",
         )
@@ -162,7 +162,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn time_threshold(&self) -> nonblock::MethodReply<u32> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Client",
             "TimeThreshold",
         )
@@ -170,7 +170,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn desktop_id(&self) -> nonblock::MethodReply<String> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Client",
             "DesktopId",
         )
@@ -178,7 +178,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn requested_accuracy_level(&self) -> nonblock::MethodReply<u32> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Client",
             "RequestedAccuracyLevel",
         )
@@ -186,7 +186,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn active(&self) -> nonblock::MethodReply<bool> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Client",
             "Active",
         )
@@ -194,7 +194,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn set_distance_threshold(&self, value: u32) -> nonblock::MethodReply<()> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::set(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Client",
             "DistanceThreshold",
             value,
@@ -203,7 +203,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn set_time_threshold(&self, value: u32) -> nonblock::MethodReply<()> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::set(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Client",
             "TimeThreshold",
             value,
@@ -212,7 +212,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn set_desktop_id(&self, value: String) -> nonblock::MethodReply<()> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::set(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Client",
             "DesktopId",
             value,
@@ -221,7 +221,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>> OrgFreede
 
     fn set_requested_accuracy_level(&self, value: u32) -> nonblock::MethodReply<()> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::set(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Client",
             "RequestedAccuracyLevel",
             value,

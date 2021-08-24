@@ -43,11 +43,15 @@ pub async fn get_location(timeout_duration: Duration) -> Result<Location> {
         .add_match(OrgFreedesktopGeoClue2ClientLocationUpdated::match_rule(
             None, None,
         ))
-        .await.context("D-bus error")?
+        .await
+        .context("D-bus error")?
         .stream();
 
     // required to be able to query geoclue
-    client.set_desktop_id("girouette".to_string()).await.context("D-bus error")?;
+    client
+        .set_desktop_id("girouette".to_string())
+        .await
+        .context("D-bus error")?;
 
     client.start().await.context("D-bus error")?;
 
@@ -57,7 +61,9 @@ pub async fn get_location(timeout_duration: Duration) -> Result<Location> {
             .map_err(|_| anyhow!("geoclue timed-out trying to find your location"))?
             .ok_or_else(|| anyhow!("no location"))?;
 
-    conn.remove_match(incoming.token()).await.context("D-bus error")?;
+    conn.remove_match(incoming.token())
+        .await
+        .context("D-bus error")?;
 
     let location_path = res.1.new;
 

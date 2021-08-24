@@ -134,7 +134,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>>
 {
     fn latitude(&self) -> nonblock::MethodReply<f64> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Location",
             "Latitude",
         )
@@ -142,7 +142,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>>
 
     fn longitude(&self) -> nonblock::MethodReply<f64> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Location",
             "Longitude",
         )
@@ -150,7 +150,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>>
 
     fn accuracy(&self) -> nonblock::MethodReply<f64> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Location",
             "Accuracy",
         )
@@ -158,7 +158,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>>
 
     fn altitude(&self) -> nonblock::MethodReply<f64> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Location",
             "Altitude",
         )
@@ -166,7 +166,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>>
 
     fn speed(&self) -> nonblock::MethodReply<f64> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Location",
             "Speed",
         )
@@ -174,7 +174,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>>
 
     fn heading(&self) -> nonblock::MethodReply<f64> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Location",
             "Heading",
         )
@@ -182,7 +182,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>>
 
     fn description(&self) -> nonblock::MethodReply<String> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Location",
             "Description",
         )
@@ -190,7 +190,7 @@ impl<'a, T: nonblock::NonblockReply, C: ::std::ops::Deref<Target = T>>
 
     fn timestamp(&self) -> nonblock::MethodReply<(u64, u64)> {
         <Self as nonblock::stdintf::org_freedesktop_dbus::Properties>::get(
-            &self,
+            self,
             "org.freedesktop.GeoClue2.Location",
             "Timestamp",
         )

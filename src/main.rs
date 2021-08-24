@@ -1,7 +1,7 @@
 use anyhow::*;
 use env_logger::{Builder, Env};
 use girouette::{
-    cli::ProgramOptions, config::ProgramConfig, segments::*, show, Location, WeatherClient,
+    cli::ProgramOptions, config::ProgramConfig, show, Girouette, Location, WeatherClient,
 };
 use log::*;
 use std::{env, time::Duration};
@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     b.format_timestamp(None);
     b.filter_level(LevelFilter::Warn); // default filter lever
     b.parse_env(Env::from(LOG_ENV_VAR)); // override with env
-                                             // override with CLI option
+                                         // override with CLI option
     if let Some(level) = options.log_level_with_default(2) {
         b.filter_level(level);
     };
@@ -100,24 +100,24 @@ async fn run_async() -> Result<()> {
         None => find_location(timeout).await?,
     };
 
-    let resp = WeatherClient::new(cache_length, timeout)
-        .query(
-            location,
-            conf.key.ok_or_else(|| {
-                anyhow!(
-                    "no API key for OpenWeather was found
-                   you can get a key over at https://openweathermap.org/appid",
-                )
-            })?,
-            conf.language.as_deref(),
+    let key = conf.key.clone().ok_or_else(|| {
+        anyhow!(
+            "no API key for OpenWeather was found
+       you can get a key over at https://openweathermap.org/appid",
         )
-        .await?;
+    })?;
+
+    let lib = Girouette::new(
+        conf.display_config,
+        cache_length,
+        timeout,
+        key,
+        conf.language,
+    );
+
     let mut stdout = StandardStream::stdout(ColorChoice::Auto);
 
-    let mut renderer = Renderer::new(conf.display_config);
-    renderer.render(&mut stdout, &resp)?;
-
-    Ok(())
+    lib.display(&location, &mut stdout).await
 }
 
 #[cfg(feature = "geoclue")]
