@@ -5,6 +5,19 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Packaging
+
+* The Minimum Supported Rust Version for girouette is now 1.53.
+
+### Features
+
+* New `daily_forecast` segment to show the temperature and general weather for the next 1 to 7 days. A `days` option controls the number of days to display (defaults to 3).
+* New `hourly_forecast` segment to show the temperature and general weather for each hour in the next 48 hours (defaults to 3). An `hours` option controls the number of hours to display (defaults to 3). A `step` controls how many hours to step over between forecasts (defaults to 2).
+
+### Changes
+
+* **Breaking change**: the `-L/--language` command line option and `language` config option now take a locale value of the form `aa_AA`, like `en_US` or `zh_CN`, instead of a 2-letter country code. girouette will warn if the value is not recognized and then fall back to `en_US` for date/time formatting.
+* If the `language` option is unset, girouette will try to use the `LANG` environment variable, before falling back to `en_US`.
 
 ## [0.5.2] - 2021-07-23
 
@@ -51,7 +64,7 @@
 
 * Allow colors to be set with hexadecimal color codes (e.g. `"#00e8ed"`).
 
-### Changed
+### Changed
 
 * The hard-coded location was removed from the default config. The default is now `auto` if geolocation is enabled, and setting it using `-l/--location` (or in the config) is needed otherwise.
 
@@ -121,7 +134,7 @@
 
 ## [0.2.0] - 2020-03-26
 
-### Added
+### Added
 
 * Support for ASCII and Unicode (emoji) output.
 * Support reading configuration from a file at `$XDG_CONFIG_HOME/girouette/config.yml`
@@ -140,7 +153,7 @@
 * Users can opt-out of the color scale for temp/wind/humidity by specifying a style in the
   segment config, instead of the default of `style: "scaled"`.
 
-### Fixed
+### Fixed
 
 * Ignore the `visibility` value from OpenWeather (instead of throwing an error if missing).
 * Avoid adding double separators when a segment has no output (if there is no rain, etc.).
