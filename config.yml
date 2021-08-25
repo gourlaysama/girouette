@@ -27,10 +27,11 @@ cache: "1m"
 # Value can be a duration ("1h", "2 days", "10min"), defaults to "10s".
 #timeout: "10s"
 
-# Language for location and description segments
+# Language for location names, weather descriptions and date/time formatting.
 #
-# Possible values are any 2-letter code accepted by the Openweather API.
-#language: "ja"
+# Possible values are of the form 'aa_AA' like 'en_US' or 'fr_FR'. Note that
+# OpenWeather only supports a subset of all valid LANG values.
+#language: "ja_JP"
 
 # Background style for the whole bar
 #

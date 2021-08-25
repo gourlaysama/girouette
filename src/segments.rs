@@ -2,14 +2,15 @@ use crate::api::Response;
 use crate::{api::current::Wind, DisplayMode, WindType};
 use crate::{config::*, serde_utils::*, QueryKind};
 use anyhow::*;
-use chrono::{Datelike, FixedOffset, TimeZone, Utc};
+use chrono::{FixedOffset, Locale, TimeZone, Utc};
 use log::*;
 use serde::{Deserialize, Serialize};
+use std::convert::TryInto;
 use std::io::Write;
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
 
 macro_rules! display_print {
-    ($out:ident, $display:ident, $a:expr, $b:expr, $c:expr) => {
+    ($out:ident, $display:expr, $a:expr, $b:expr, $c:expr) => {
         match $display {
             DisplayMode::NerdFonts => write!($out, "{}", $a)?,
             DisplayMode::Unicode => write!($out, "{}", $b)?,
@@ -27,6 +28,12 @@ enum RenderStatus {
     Rendered,
 }
 
+struct RenderConf<'a> {
+    base_style: &'a ColorSpec,
+    display_mode: DisplayMode,
+    locale: Locale,
+}
+
 impl Renderer {
     pub fn from(display_config: &DisplayConfig) -> Self {
         let mut display_config = display_config.clone();
@@ -38,7 +45,12 @@ impl Renderer {
         Renderer { display_config }
     }
 
-    pub fn render(&mut self, out: &mut StandardStream, resp: &Response) -> Result<()> {
+    pub fn render(
+        &mut self,
+        out: &mut StandardStream,
+        resp: &Response,
+        language: Option<&str>,
+    ) -> Result<()> {
         if self.display_config.segments.is_empty() {
             warn!("there are not segments to display!");
             return Ok(());
@@ -46,23 +58,34 @@ impl Renderer {
 
         out.set_color(&self.display_config.base_style)?;
 
-        let mut status = self.display_config.segments[0].render(
-            out,
-            &self.display_config.base_style,
-            self.display_config.display_mode,
-            resp,
-        )?;
+        let env_locale = std::env::var("LANG").ok();
+        let locale = language
+            .or_else(|| env_locale.as_deref())
+            .and_then(|l| {
+                let l = if let Some(s) = l.split_once('.') {
+                    s.0
+                } else {
+                    l
+                };
+                l.try_into().map_err(|_| {
+                warn!("unknown locale: {}; ensure it has the shape 'aa_AA', e.g. ja_JP, en_US", l);
+            }).ok()
+            })
+            .unwrap_or_else(|| "en_US".try_into().unwrap());
+
+        let conf = RenderConf {
+            base_style: &self.display_config.base_style,
+            display_mode: self.display_config.display_mode,
+            locale,
+        };
+
+        let mut status = self.display_config.segments[0].render(out, &conf, resp)?;
         for s in self.display_config.segments[1..].iter() {
             out.set_color(&self.display_config.base_style)?;
             if let RenderStatus::Rendered = status {
                 write!(out, "{}", self.display_config.separator)?;
             }
-            status = s.render(
-                out,
-                &self.display_config.base_style,
-                self.display_config.display_mode,
-                resp,
-            )?;
+            status = s.render(out, &conf, resp)?;
         }
 
         out.reset()?;
@@ -112,24 +135,23 @@ impl Segment {
     fn render(
         &self,
         out: &mut StandardStream,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         match self {
-            Segment::Instant(i) => i.render(out, base_style, display_mode, resp),
-            Segment::LocationName(i) => i.render(out, base_style, display_mode, resp),
-            Segment::Temperature(i) => i.render(out, base_style, display_mode, resp),
-            Segment::WeatherIcon(i) => i.render(out, base_style, display_mode, resp),
-            Segment::WeatherDescription(i) => i.render(out, base_style, display_mode, resp),
-            Segment::WindSpeed(i) => i.render(out, base_style, display_mode, resp),
-            Segment::Humidity(i) => i.render(out, base_style, display_mode, resp),
-            Segment::Rain(i) => i.render(out, base_style, display_mode, resp),
-            Segment::Snow(i) => i.render(out, base_style, display_mode, resp),
-            Segment::Pressure(i) => i.render(out, base_style, display_mode, resp),
-            Segment::CloudCover(c) => c.render(out, base_style, display_mode, resp),
-            Segment::DailyForecast(c) => c.render(out, base_style, display_mode, resp),
-            Segment::HourlyForecast(c) => c.render(out, base_style, display_mode, resp),
+            Segment::Instant(i) => i.render(out, conf, resp),
+            Segment::LocationName(i) => i.render(out, conf, resp),
+            Segment::Temperature(i) => i.render(out, conf, resp),
+            Segment::WeatherIcon(i) => i.render(out, conf, resp),
+            Segment::WeatherDescription(i) => i.render(out, conf, resp),
+            Segment::WindSpeed(i) => i.render(out, conf, resp),
+            Segment::Humidity(i) => i.render(out, conf, resp),
+            Segment::Rain(i) => i.render(out, conf, resp),
+            Segment::Snow(i) => i.render(out, conf, resp),
+            Segment::Pressure(i) => i.render(out, conf, resp),
+            Segment::CloudCover(c) => c.render(out, conf, resp),
+            Segment::DailyForecast(c) => c.render(out, conf, resp),
+            Segment::HourlyForecast(c) => c.render(out, conf, resp),
         }
     }
 
@@ -163,8 +185,7 @@ impl Instant {
     fn render(
         &self,
         out: &mut StandardStream,
-        _: &ColorSpec,
-        _: DisplayMode,
+        _conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let resp = resp.as_current()?;
@@ -198,8 +219,7 @@ impl LocationName {
     fn render(
         &self,
         out: &mut StandardStream,
-        _: &ColorSpec,
-        _: DisplayMode,
+        _conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let name = &resp.as_current()?.name;
@@ -248,8 +268,7 @@ impl Temperature {
     fn render(
         &self,
         out: &mut StandardStream,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let resp = resp.as_current()?;
@@ -258,11 +277,11 @@ impl Temperature {
         let temp_min = resp.main.temp_min;
         let temp_max = resp.main.temp_max;
 
-        let display_mode = self.display_mode.unwrap_or(display_mode);
+        let display_mode = self.display_mode.unwrap_or(conf.display_mode);
 
         if self.min_max {
             display_print!(out, display_mode, " \u{f175}", " \u{2b07}\u{fe0f} ", " (m ");
-            display_temp(&self.style, out, temp_min, base_style)?;
+            display_temp(&self.style, out, temp_min, conf.base_style)?;
             display_print!(
                 out,
                 display_mode,
@@ -270,19 +289,19 @@ impl Temperature {
                 " \u{1f321}\u{fe0f} ",
                 " T "
             );
-            display_temp(&self.style, out, temp, base_style)?;
+            display_temp(&self.style, out, temp, conf.base_style)?;
             display_print!(out, display_mode, " \u{f176}", " \u{2b06}\u{fe0f} ", " M ");
-            display_temp(&self.style, out, temp_max, base_style)?;
+            display_temp(&self.style, out, temp_max, conf.base_style)?;
             if let DisplayMode::Ascii = display_mode {
                 write!(out, ")")?;
             }
         } else {
             display_print!(out, display_mode, "\u{e350} ", "\u{1f321}\u{fe0f} ", "T ");
-            display_temp(&self.style, out, temp, base_style)?;
+            display_temp(&self.style, out, temp, conf.base_style)?;
         }
         if self.feels_like {
             write!(out, " (feels ")?;
-            display_temp(&self.style, out, feels_like, base_style)?;
+            display_temp(&self.style, out, feels_like, conf.base_style)?;
             write!(out, ")")?;
         }
 
@@ -341,8 +360,7 @@ impl WeatherIcon {
     fn render(
         &self,
         out: &mut StandardStream,
-        _: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let resp = resp.as_current()?;
@@ -351,13 +369,13 @@ impl WeatherIcon {
         let wind = resp.wind.as_ref();
         let id = resp.weather[0].id;
 
-        if let DisplayMode::Ascii = display_mode {
+        if let DisplayMode::Ascii = conf.display_mode {
             warn!("no weather icon to display in ascii mode!");
         }
 
         WeatherIcon::render_icon(
             out,
-            display_mode,
+            conf.display_mode,
             &self.style,
             Some(sunset),
             Some(sunrise),
@@ -388,8 +406,7 @@ impl WeatherDescription {
     fn render(
         &self,
         out: &mut StandardStream,
-        _: &ColorSpec,
-        _: DisplayMode,
+        _conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let description = &resp.as_current()?.weather[0].description;
@@ -481,14 +498,13 @@ impl WindSpeed {
     fn render(
         &self,
         out: &mut StandardStream,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let wind = resp.as_current()?.wind.as_ref();
 
         if let Some(w) = wind {
-            self.display_wind(out, w, base_style, display_mode)?;
+            self.display_wind(out, w, conf.base_style, conf.display_mode)?;
             Ok(RenderStatus::Rendered)
         } else {
             Ok(RenderStatus::Empty)
@@ -537,13 +553,12 @@ impl Humidity {
     fn render(
         &self,
         out: &mut StandardStream,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let humidity = resp.as_current()?.main.humidity;
 
-        self.display_humidity(out, humidity, base_style, display_mode)?;
+        self.display_humidity(out, humidity, conf.base_style, conf.display_mode)?;
 
         Ok(RenderStatus::Rendered)
     }
@@ -561,20 +576,19 @@ impl Rain {
     fn render(
         &self,
         out: &mut StandardStream,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let rain = resp.as_current()?.rain.as_ref();
 
         if let Some(r) = rain {
             if let Some(mm) = r.one_h.or(r.three_h) {
-                display_print!(out, display_mode, "\u{e371}", "\u{2614}", "R");
+                display_print!(out, conf.display_mode, "\u{e371}", "\u{2614}", "R");
                 if let Some(ref style) = self.style {
                     out.set_color(style)?;
                 }
                 write!(out, " {:.1} ", mm)?;
-                out.set_color(base_style)?;
+                out.set_color(conf.base_style)?;
                 write!(out, "mm/h")?;
 
                 return Ok(RenderStatus::Rendered);
@@ -598,20 +612,19 @@ impl Snow {
     fn render(
         &self,
         out: &mut StandardStream,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let snow = resp.as_current()?.snow.as_ref();
 
         if let Some(r) = snow {
             if let Some(mm) = r.one_h.or(r.three_h) {
-                display_print!(out, display_mode, "\u{f2dc}", "\u{2744}\u{fe0f}", "S");
+                display_print!(out, conf.display_mode, "\u{f2dc}", "\u{2744}\u{fe0f}", "S");
                 if let Some(ref style) = self.style {
                     out.set_color(style)?;
                 }
                 write!(out, " {:.1} ", mm)?;
-                out.set_color(base_style)?;
+                out.set_color(conf.base_style)?;
                 write!(out, "mm/h")?;
 
                 return Ok(RenderStatus::Rendered);
@@ -654,13 +667,12 @@ impl Pressure {
     fn render(
         &self,
         out: &mut StandardStream,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let pressure = resp.as_current()?.main.pressure;
 
-        self.display_pressure(out, pressure, base_style, display_mode)?;
+        self.display_pressure(out, pressure, conf.base_style, conf.display_mode)?;
 
         Ok(RenderStatus::Rendered)
     }
@@ -697,14 +709,13 @@ impl CloudCover {
     fn render(
         &self,
         out: &mut StandardStream,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let clouds = resp.as_current()?.clouds.as_ref();
 
         if let Some(clouds) = clouds {
-            self.display_cover(out, clouds.all, base_style, display_mode)?;
+            self.display_cover(out, clouds.all, conf.base_style, conf.display_mode)?;
         }
 
         Ok(RenderStatus::Rendered)
@@ -736,14 +747,13 @@ impl DailyForecast {
     fn render(
         &self,
         out: &mut StandardStream,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let resp = resp.as_forecast()?;
         let timezone = FixedOffset::east(resp.timezone_offset);
         let mut first = true;
-        out.set_color(base_style)?;
+        out.set_color(conf.base_style)?;
 
         let end = resp.daily.len().min(1 + self.days as usize);
 
@@ -760,7 +770,8 @@ impl DailyForecast {
                     write!(out, "   ")?;
                 }
                 let source_date = timezone.timestamp(dt, 0);
-                write!(out, "{} ", source_date.weekday())?;
+
+                write!(out, "{} ", source_date.format_localized("%a", conf.locale))?;
 
                 let wind = Wind {
                     speed: day.wind_speed,
@@ -770,18 +781,18 @@ impl DailyForecast {
 
                 WeatherIcon::render_icon(
                     out,
-                    display_mode,
+                    conf.display_mode,
                     &self.style,
                     None,
                     None,
                     Some(&wind),
                     day.weather[0].id,
                 )?;
-                display_print!(out, display_mode, "  ", " ", "");
+                display_print!(out, conf.display_mode, "  ", " ", "");
 
-                display_temp(&self.temp_style, out, t.day, base_style)?;
+                display_temp(&self.temp_style, out, t.day, conf.base_style)?;
 
-                out.set_color(base_style)?;
+                out.set_color(conf.base_style)?;
             }
         }
 
@@ -816,14 +827,13 @@ impl HourlyForecast {
     fn render(
         &self,
         out: &mut StandardStream,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
         resp: &Response,
     ) -> Result<RenderStatus> {
         let resp = resp.as_forecast()?;
         let timezone = FixedOffset::east(resp.timezone_offset);
         let mut first = true;
-        out.set_color(base_style)?;
+        out.set_color(conf.base_style)?;
 
         let hours = self.hours as usize;
         let step = 1.max(self.step as usize);
@@ -853,18 +863,18 @@ impl HourlyForecast {
 
                 WeatherIcon::render_icon(
                     out,
-                    display_mode,
+                    conf.display_mode,
                     &self.style,
                     None,
                     None,
                     Some(&wind),
                     day.weather[0].id,
                 )?;
-                display_print!(out, display_mode, "  ", " ", "");
+                display_print!(out, conf.display_mode, "  ", " ", "");
 
-                display_temp(&self.temp_style, out, t, base_style)?;
+                display_temp(&self.temp_style, out, t, conf.base_style)?;
 
-                out.set_color(base_style)?;
+                out.set_color(conf.base_style)?;
             }
 
             i += 1;

@@ -135,7 +135,7 @@ impl Girouette {
             response.merge(res);
         }
 
-        renderer.render(out, &response)?;
+        renderer.render(out, &response, self.language.as_deref())?;
 
         Ok(())
     }
@@ -284,6 +284,8 @@ impl WeatherClient {
         key: String,
         language: Option<&str>,
     ) -> Result<Response> {
+        let language = language.map(|l| l.split_once('_').map(|t| t.0).unwrap_or(l));
+
         match self.query_cache(kind, location, language) {
             Ok(Some(resp)) => return Ok(resp),
             Ok(None) => {}
