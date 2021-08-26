@@ -50,13 +50,13 @@ pub struct ProgramOptions {
     pub cache: Option<String>,
 
     #[structopt(short = "L", long)]
-    /// Use this language for location names and weather descriptions.
+    /// Use this language for location names, weather descriptions and date formatting.
     ///
     /// This asks OpenWeather to provide location names and weather descriptions
-    /// in the given language.
+    /// in the given language, and uses it to format date and times.
     ///
-    /// Possible values are any 2-letter language code supported by OpenWeather, like
-    /// "jp" (Japanese), "en" (English), "uk" (Ukrainian) or "zh_cn" (Chinese Simpl.).
+    /// Possible values are of the form 'aa_AA' like 'en_US' or 'fr_FR'. Note that
+    /// OpenWeather only supports a subset of all valid LANG values.
     pub language: Option<String>,
 
     #[structopt(long)]
