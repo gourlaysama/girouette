@@ -6,7 +6,7 @@ pub mod geoclue;
 pub mod segments;
 mod serde_utils;
 
-use std::time::Duration;
+use std::{borrow::Cow, time::Duration};
 
 use crate::config::DisplayConfig;
 use anyhow::*;
@@ -284,9 +284,12 @@ impl WeatherClient {
         key: String,
         language: Option<&str>,
     ) -> Result<Response> {
-        let language = language.map(|l| l.split_once('_').map(|t| t.0).unwrap_or(l));
+        // Adapt between locales and Openweather language codes:
+        // the codes OW accepts are a mix of ISO 639-1 language codes,
+        // ISO 3166 country codes and locale-like codes...
+        let language = language.map(make_openweather_language_codes);
 
-        match self.query_cache(kind, location, language) {
+        match self.query_cache(kind, location, language.as_deref()) {
             Ok(Some(resp)) => return Ok(resp),
             Ok(None) => {}
             Err(e) => {
@@ -294,7 +297,8 @@ impl WeatherClient {
             }
         }
 
-        self.query_api(kind, location, key, language).await
+        self.query_api(kind, location, key, language.as_deref())
+            .await
     }
 
     async fn query_api(
@@ -414,6 +418,26 @@ pub enum QueryKind {
     Current,
     ForeCast,
     Both,
+}
+
+fn make_openweather_language_codes(s: &str) -> Cow<str> {
+    // openweather supports these directly
+    if let "zh_CN" | "zh_TW" | "pt_BR" = s {
+        return s.to_lowercase().into();
+    };
+
+    let l_code = s.split_once('_').map(|t| t.0).unwrap_or(s);
+
+    // openweather uses country codes for those
+    match l_code {
+        "sq" => "al",        // Albanian
+        "cs" => "cz",        // Czech
+        "ko" => "kr",        // Korean
+        "lv" => "la",        // Latvian
+        "nb" | "nn" => "no", // Norwegian
+        s => s,
+    }
+    .into()
 }
 
 #[macro_export]
