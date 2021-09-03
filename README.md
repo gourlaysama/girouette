@@ -33,9 +33,9 @@ Otherwise you will need to [build from source](#building-from-source).
 Show the weather at a location:
 
 ```sh
-$ girouette -l "Los Angeles"
-$ girouette -l "35.68,139.69"
-$ girouette -l auto  # if built with geoclue support (not available in static build)
+girouette -l "Los Angeles"
+girouette -l "35.68,139.69"
+girouette -l auto  # if built with geoclue support (not available in static build)
 ```
 
 The location can be set and the output customized in the [configuration file](#configuration).
@@ -45,7 +45,7 @@ The location can be set and the output customized in the [configuration file](#c
 girouette is written in Rust, so you need a [Rust install] to build it. girouette compiles with
 Rust 1.48 or newer (1.53 to build `main`).
 
-Building a dynamically-linked girouette (the default) also requires d-bus (for geolocalization support) and OpenSSL 
+Building a dynamically-linked girouette (the default) also requires d-bus (for geolocalization support) and OpenSSL
 (`libdbus-1-dev` and `libssl-dev` on Ubuntu, `dbus-devel` and `openssl-devel` on Fedora).
 
 Build the latest release (0.6.0) from source with:
@@ -61,16 +61,16 @@ girouette 0.6.0
 You can disable geolocation (and the need for d-bus and Geoclue) by building instead with:
 
 ```sh
-$ cargo build --release --no-default-features --features dynamic
+cargo build --release --no-default-features --features dynamic
 ```
 
-You can also build a fully static Linux binary using the musl libc. After installing musl 
+You can also build a fully static Linux binary using the musl libc. After installing musl
 (`musl-tools` on Ubuntu, `musl-libc-static` on Fedora), run:
 
 ```sh
-$ rustup target add x86_64-unknown-linux-musl # run this only once
-$ cargo build --release --no-default-features --features default-static --target x86_64-unknown-linux-musl
-$ ./target/x86_64-unknown-linux-musl/release/girouette
+rustup target add x86_64-unknown-linux-musl # run this only once
+cargo build --release --no-default-features --features default-static --target x86_64-unknown-linux-musl
+./target/x86_64-unknown-linux-musl/release/girouette
 ```
 
 ## Options
@@ -108,13 +108,13 @@ $ ./target/x86_64-unknown-linux-musl/release/girouette
         This option overrides the corresponding value from the config.
 
 -L, --language <language>
-        Use this language for location names and weather descriptions.
+        Use this language for location names, weather descriptions and date formatting.
 
-        This asks OpenWeather to provide location names and weather descriptions in
-        the given language.
+        This asks OpenWeather to provide location names and weather descriptions in the
+        given language, and uses it to format date and times.
 
-        Possible values are any 2-letter language code supported by OpenWeather, like
-        "jp" (Japanese), "en" (English), "uk" (Ukrainian) or "zh_cn" (Chinese Simpl.).
+        Possible values are of the form 'aa_AA' like 'en_US' or 'fr_FR'. Note that
+        OpenWeather only supports a subset of all valid LANG values.
 
 -l, --location <location>    
         Location to query (required if not set in config).
@@ -139,6 +139,12 @@ $ ./target/x86_64-unknown-linux-musl/release/girouette
     --print-default-config    
         Prints the contents of the default configuration and exits.
 
+-q, --quiet
+        Pass for less log output
+
+-v, --verbose
+        Pass for more log output
+
 -h, --help           
         Prints help information.
 
@@ -159,13 +165,13 @@ girouette doesn't create a configuration file for you, but looks for it in the f
 The `--print-default-config` option displays the content of the default config. It can be use to initialize a custom configuration file:
 
 ```sh
-$ girouette --print-default-config > myconfig.yml
+girouette --print-default-config > myconfig.yml
 ```
 
 ### Global configuration keys
 
 * `key` (string): the OpenWeather API key to use (can be overridden on the command-line with `-k/--key`). Registering a key is required for anything more than light testing.
-* `location` (string): a default location to query (can be overridden on the command-line with `-l/--location`). 
+* `location` (string): a default location to query (can be overridden on the command-line with `-l/--location`).
   * If built with geolocation support (`geoclue` feature), can be `auto` or left empty to attempt geolocation.
   * Can be any name of a place.
   * Can be a tuple of latitude, longitude (e.g. `"35.68,139.69"`)
@@ -174,8 +180,7 @@ $ girouette --print-default-config > myconfig.yml
   If there is a cached response younger than the duration given as argument, it is returned directly. Otherwise, it queries the API and write the response to the cache for use by a later invocation.
   NOTE: No response is written to the cache if this option isn't set. The invocation doing the caching and the one potentially querying it *both* need this option set.
   Recognized durations go from seconds ("seconds, second, sec, s") to years ("years, year, y").
-* `language` (string): the language used for location and description segments. Possible values are any 2-letter code accepted by the OpenWeather API.
-
+* `language` (string): the language used for location names, weather descriptions and date/time formatting. Possible values are of the form 'aa_AA' like 'en_US' or 'fr_FR'.
 
 See the default configuration file [config.yml](config.yml) and browse the [example_configs](example_configs/) directory for examples (the example output shown above displays the default and both example configurations).
 
@@ -203,8 +208,18 @@ See the default configuration file [config.yml](config.yml) and browse the [exam
   * `humidity`: the measured humidity.
   * `pressure`: the measured pressure.
   * `cloud_cover`: the overall fraction of the sky covered by clouds.
+  * `daily_forecast`: the temperature and general weather for the next 1 to 7 days. Has three optional attributes:
+    * `style` (style): the style used to display the weather icon.
+    * `temp_style` (style): the style used to display the temperature, see the `temperature` segment.
+    * `days` (integer): the number of days to display (between 1 and 7, defaults to 3).
+  * `hourly_forecast`: the temperature and general weather for each hour in the next 48 hours. Has four attributes:
+    * `style` (style): the style used to display the weather icon.
+    * `temp_style` (style): the style used to display the temperature, see the `temperature` segment.
+    * `hours` (integer): the number of hours to display (defaults to 3).
+    * `step` (integer): the number of hours to step over between forecasts (defaults to 2).
 
 A style attribute is an object with 6 attributes, all optional:
+
 * `bg` (color): the background color.
 * `fg` (color): the foreground color.
 * `bold` (boolean): if yes, render the text bold.
@@ -213,6 +228,7 @@ A style attribute is an object with 6 attributes, all optional:
 * `italic` (boolean): if yes, mark the text as italic. Terminal support varies.
 
 A color attribute used in styles can be either:
+
 * a string containing a color name (black, blue, green, red, cyan, magenta, yellow, white),
 * a integer between 0 and 255 representing an ANSI color code (e.g. `122`),
 * a hexadecimal color code (e.g. `"#002b3f"`),
