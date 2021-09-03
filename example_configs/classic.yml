@@ -20,7 +20,7 @@ location: "London, UK"
 # Caching of API responses
 #
 # Value can be a duration ("1h", "2 days", "10min") or "none" to disable it
-cache: "5m"
+cache: "1m"
 
 # Time to wait for a response from Openweather
 #
@@ -47,9 +47,9 @@ cache: "5m"
 #    example: [15, 55, 84]
 base_style:
   # Background color
-  bg: "#1b1d1e"
+  bg: 17
   # Foreground color
-  fg: "#f8f8f2"
+  fg: 248
   # Bold text
   #bold: false
   # Intense text
@@ -78,20 +78,26 @@ base_style:
 segments:
   - instant:
       style:
-        fg: "#fd971f"
-      date_format: "%R"
+        fg: 167
+      date_format: "%v %R %:z"
   - location_name:
       style:
-        fg: "#ae81ff"
+        fg: white
         intense: true
+  - temperature:
+      feels_like: true
+      #style: "scaled" # by default: auto-scale the color
+      #style:          # or manually set the style
+      #  fg: 213
+      #  bold: true
   - weather_icon:
       style:
-        fg: "#c4be89"
+        fg: white
         intense: true
   - weather_description:
       style:
-        fg: "#c4be89"
-  - temperature
+        fg: white
+        intense: true
   - rain:
       style:
         fg: 45
@@ -99,4 +105,9 @@ segments:
       style:
         fg: 45
   - wind_speed
-  - hourly_forecast
+  - cloud_cover
+  - humidity
+  - pressure:
+      style:
+        fg: green
+        intense: true
