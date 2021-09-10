@@ -57,10 +57,10 @@ impl Response {
 
     pub fn merge(&mut self, other: Response) {
         if let Some(c) = other.current {
-            self.current.insert(c);
+            self.current = Some(c);
         }
         if let Some(f) = other.forecast {
-            self.forecast.insert(f);
+            self.forecast = Some(f);
         }
     }
 
