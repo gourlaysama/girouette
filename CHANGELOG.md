@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+
+## [0.6.1] - 2021-09-10
+
 ### Changes
 
 * The default `config.yml` has been changed to include the hourly forecast; the color scheme has also been updated.
@@ -171,7 +174,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/gourlaysama/girouette/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/gourlaysama/girouette/compare/v0.5.2...v0.6.0
 [0.5.2]: https://github.com/gourlaysama/girouette/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/gourlaysama/girouette/compare/v0.5.0...v0.5.1
