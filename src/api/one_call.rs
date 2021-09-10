@@ -13,9 +13,9 @@ pub struct OneCallResponse {
     pub lon: f32,
     pub timezone_offset: i32,
     pub current: WeatherData,
-    pub minutely: Vec<MinutelyForecast>,
-    pub hourly: Vec<WeatherData>,
-    pub daily: Vec<WeatherData>,
+    pub minutely: Option<Vec<MinutelyForecast>>,
+    pub hourly: Option<Vec<WeatherData>>,
+    pub daily: Option<Vec<WeatherData>>,
     pub alerts: Option<Vec<Alert>>,
 }
 

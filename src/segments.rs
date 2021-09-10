@@ -751,14 +751,15 @@ impl DailyForecast {
         resp: &Response,
     ) -> Result<RenderStatus> {
         let resp = resp.as_forecast()?;
+        let daily = resp.daily.as_deref().unwrap_or_default();
         let timezone = FixedOffset::east(resp.timezone_offset);
         let mut first = true;
         out.set_color(conf.base_style)?;
 
-        let end = resp.daily.len().min(1 + self.days as usize);
+        let end = daily.len().min(1 + self.days as usize);
 
         for i in 1..end {
-            let day = &resp.daily[i as usize];
+            let day = &daily[i as usize];
 
             let dt = day.dt;
 
@@ -831,17 +832,18 @@ impl HourlyForecast {
         resp: &Response,
     ) -> Result<RenderStatus> {
         let resp = resp.as_forecast()?;
+        let hourly = resp.hourly.as_deref().unwrap_or_default();
         let timezone = FixedOffset::east(resp.timezone_offset);
         let mut first = true;
         out.set_color(conf.base_style)?;
 
         let hours = self.hours as usize;
         let step = 1.max(self.step as usize);
-        let end = resp.hourly.len();
+        let end = hourly.len();
 
         let mut i = 0;
         while i * step + 1 < end && i < hours {
-            let day = &resp.hourly[i * step + 1];
+            let day = &hourly[i * step + 1];
 
             let dt = day.dt;
 

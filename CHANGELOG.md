@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Fixes
+
+* Querying some locations with a hourly/daily forecast segment could sometimes fail when local forecast data wasn't provided by OpenWeather.
 
 ## [0.6.1] - 2021-09-10
 
