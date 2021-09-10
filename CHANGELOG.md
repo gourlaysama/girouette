@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Changes
+
+* The default `config.yml` has been changed to include the hourly forecast; the color scheme has also been updated.
 
 ## [0.6.0] - 2021-09-03
 
