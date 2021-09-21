@@ -98,4 +98,5 @@ pub struct Alert {
     pub start: i64,
     pub end: i64,
     pub description: String,
+    pub tags: Vec<String>,
 }

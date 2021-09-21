@@ -5,6 +5,9 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Features
+
+* New `alerts` segment to display weather alerts for the current location.
 
 ## [0.6.2] - 2021-09-10
 
