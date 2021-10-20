@@ -21,7 +21,17 @@ jobs:
       - name: Switch to latest tag
         run: git checkout ${{ steps.get-latest-tag.outputs.tag }}
         if: ${{ github.event_name == 'schedule' }}
-      - uses: actions-rs/audit-check@v1
+      - uses: actions-rs/toolchain@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Install cargo audit
+        run: cargo install cargo-audit
+      - uses: actions-rs/cargo@v1
+        with:
+          command: audit
+          # we do not use the codepaths that triggers this in chrono
+          # TODO: remove when chrono gets updated
+          args: --ignore RUSTSEC-2020-0159
 
