@@ -1133,7 +1133,11 @@ fn get_icon(id: u16, night: bool, wind_type: &WindType) -> &'static str {
         },
         (a, b) => {
             debug!("no icon for (night: {}, code: {}); using fallback", a, b);
-            "\u{e374}"
+            if night {
+                "\u{e32b}"
+            } else {
+                "\u{e30d}"
+            }
         }
     }
 }
@@ -1190,7 +1194,11 @@ fn get_unicode(id: u16, night: bool) -> &'static str {
         (false, 802..=809) => "\u{26c5}",
         (a, b) => {
             debug!("no unicode for (night: {}, code: {}); using fallback", a, b);
-            "\u{e374}"
+            if night {
+                "\u{263e}"
+            } else {
+                "\u{1f31e}"
+            }
         }
     }
 }
