@@ -5,6 +5,7 @@ use anyhow::*;
 use chrono::{FixedOffset, Locale, TimeZone, Utc};
 use log::*;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::convert::TryInto;
 use std::io::Write;
 use termcolor::{Color, ColorSpec, StandardStream, WriteColor};
@@ -129,6 +130,7 @@ pub enum Segment {
     CloudCover(CloudCover),
     DailyForecast(DailyForecast),
     HourlyForecast(HourlyForecast),
+    Alerts(Alerts),
 }
 
 impl Segment {
@@ -152,11 +154,15 @@ impl Segment {
             Segment::CloudCover(c) => c.render(out, conf, resp),
             Segment::DailyForecast(c) => c.render(out, conf, resp),
             Segment::HourlyForecast(c) => c.render(out, conf, resp),
+            Segment::Alerts(c) => c.render(out, conf, resp),
         }
     }
 
     pub fn is_forecast(&self) -> bool {
-        matches!(self, Segment::DailyForecast(_) | Segment::HourlyForecast(_))
+        matches!(
+            self,
+            Segment::DailyForecast(_) | Segment::HourlyForecast(_) | Segment::Alerts(_)
+        )
     }
 }
 
@@ -880,6 +886,143 @@ impl HourlyForecast {
             }
 
             i += 1;
+        }
+
+        Ok(RenderStatus::Rendered)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Alerts {
+    pub display_mode: Option<DisplayMode>,
+    #[serde(with = "option_color_spec")]
+    pub style: Option<ColorSpec>,
+}
+
+impl Default for Alerts {
+    fn default() -> Self {
+        Self {
+            display_mode: Default::default(),
+            style: Default::default(),
+        }
+    }
+}
+
+impl Alerts {
+    fn render(
+        &self,
+        out: &mut StandardStream,
+        conf: &RenderConf,
+        resp: &Response,
+    ) -> Result<RenderStatus> {
+        let resp = resp.as_forecast()?;
+        let alerts = resp.alerts.as_deref().unwrap_or_default();
+        let timezone = resp.timezone_offset;
+
+        for (i, a) in alerts.iter().enumerate() {
+            write!(out, "{}. ", i + 1)?;
+
+            let mut seen_tags = HashSet::new();
+            for t in &a.tags {
+                let t = t.to_ascii_lowercase();
+                if !seen_tags.contains(&t) {
+                    match t.as_str() {
+                        "flood" => {
+                            display_print!(
+                                out,
+                                conf.display_mode,
+                                "\u{e375}  ",
+                                "\u{1f4a7}\u{fe0f}  ",
+                                ""
+                            )
+                        }
+                        "wind" => display_print!(
+                            out,
+                            conf.display_mode,
+                            "\u{e34b}  ",
+                            "\u{1f32c}\u{fe0f}  ",
+                            ""
+                        ),
+                        "rain" => display_print!(
+                            out,
+                            conf.display_mode,
+                            "\u{e318}  ",
+                            "\u{1f327}\u{fe0f}  ",
+                            ""
+                        ),
+                        "thunderstorm" => display_print!(
+                            out,
+                            conf.display_mode,
+                            "\u{e31d}  ",
+                            "\u{1f329}\u{fe0f}  ",
+                            ""
+                        ),
+                        "fog" => display_print!(
+                            out,
+                            conf.display_mode,
+                            "\u{e313}  ",
+                            "\u{1f32b}\u{fe0f}  ",
+                            ""
+                        ),
+                        "coastal event" => display_print!(
+                            out,
+                            conf.display_mode,
+                            "\u{1f3d6}\u{fe0f}  ",
+                            "\u{1f3d6}\u{fe0f}  ",
+                            ""
+                        ),
+                        a => {
+                            debug!("no icon for tag: {}; ignoring", a);
+                        },
+                    };
+                    seen_tags.insert(t);
+                }
+            }
+
+            if let Some(ref style) = self.style {
+                out.set_color(style)?;
+                write!(out, "{} ", a.event)?;
+                out.set_color(conf.base_style)?;
+            } else {
+                write!(out, "{} ", a.event)?;
+            }
+
+            let start_date = FixedOffset::east(timezone).timestamp(a.start, 0);
+            let end_date = FixedOffset::east(timezone).timestamp(a.end, 0);
+            let now = Utc::now();
+
+            if start_date > now {
+                display_print!(
+                    out,
+                    conf.display_mode,
+                    "\u{f071} \u{f176}",
+                    "\u{26a0}\u{fe0f} \u{2b06}\u{fe0f} ",
+                    ""
+                );
+                let format = if start_date.date() == now.date() {
+                    "%R"
+                } else {
+                    "%a %R"
+                };
+                write!(out, "{} ", start_date.format_localized(format, conf.locale))?;
+            }
+
+            if end_date > now {
+                display_print!(
+                    out,
+                    conf.display_mode,
+                    "\u{f071} \u{f175}",
+                    "\u{26a0}\u{fe0f} \u{2b07}\u{fe0f} ",
+                    ""
+                );
+                let format = if end_date.date() == now.date() {
+                    "%R"
+                } else {
+                    "%a %R"
+                };
+                write!(out, "{} ", end_date.format_localized(format, conf.locale))?;
+            }
         }
 
         Ok(RenderStatus::Rendered)
