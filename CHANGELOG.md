@@ -9,6 +9,11 @@
 
 * New `alerts` segment to display weather alerts for the current location.
 
+### Fixes
+
+* Unknown weather codes used to cause a `N/A` icon to be used as weather icon: we now use basic day/night icons instead (the sun or the moon).
+* The unicode icon for haze is now the same for night as it was for day (the fog emoji).
+
 ## [0.6.2] - 2021-09-10
 
 ### Fixes
