@@ -1174,7 +1174,7 @@ fn get_unicode(id: u16, night: bool) -> &'static str {
         // mist/fog/smoke/haze/dust/sandstorm/ash
         (_, 701)
         | (_, 711)
-        | (false, 721)
+        | (_, 721)
         | (_, 731)
         | (_, 761)
         | (_, 741)
