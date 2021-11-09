@@ -976,7 +976,7 @@ impl Alerts {
                         ),
                         a => {
                             debug!("no icon for tag: {}; ignoring", a);
-                        },
+                        }
                     };
                     seen_tags.insert(t);
                 }
@@ -1227,14 +1227,9 @@ fn get_unicode(id: u16, night: bool) -> &'static str {
         // snow
         (_, 600..=609) => "\u{1f328}",
         // mist/fog/smoke/haze/dust/sandstorm/ash
-        (_, 701)
-        | (_, 711)
-        | (_, 721)
-        | (_, 731)
-        | (_, 761)
-        | (_, 741)
-        | (_, 751)
-        | (_, 762) => "\u{1f32b}",
+        (_, 701) | (_, 711) | (_, 721) | (_, 731) | (_, 761) | (_, 741) | (_, 751) | (_, 762) => {
+            "\u{1f32b}"
+        }
         // squalls
         (_, 771) => "\u{1f32c}",
         // tornado
