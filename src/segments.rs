@@ -131,6 +131,7 @@ pub enum Segment {
     DailyForecast(DailyForecast),
     HourlyForecast(HourlyForecast),
     Alerts(Alerts),
+    DayTime(DayTime),
 }
 
 impl Segment {
@@ -155,6 +156,7 @@ impl Segment {
             Segment::DailyForecast(c) => c.render(out, conf, resp),
             Segment::HourlyForecast(c) => c.render(out, conf, resp),
             Segment::Alerts(c) => c.render(out, conf, resp),
+            Segment::DayTime(c) => c.render(out, conf, resp),
         }
     }
 
@@ -974,7 +976,7 @@ impl Alerts {
                         ),
                         a => {
                             debug!("no icon for tag: {}; ignoring", a);
-                        },
+                        }
                     };
                     seen_tags.insert(t);
                 }
@@ -1024,6 +1026,59 @@ impl Alerts {
                 write!(out, "{} ", end_date.format_localized(format, conf.locale))?;
             }
         }
+
+        Ok(RenderStatus::Rendered)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct DayTime {
+    pub display_mode: Option<DisplayMode>,
+    #[serde(with = "option_color_spec")]
+    pub style: Option<ColorSpec>,
+}
+
+impl Default for DayTime {
+    fn default() -> Self {
+        Self {
+            display_mode: Default::default(),
+            style: Default::default(),
+        }
+    }
+}
+
+impl DayTime {
+    fn render(
+        &self,
+        out: &mut StandardStream,
+        conf: &RenderConf,
+        resp: &Response,
+    ) -> Result<RenderStatus> {
+        let resp = resp.as_current()?;
+        let timezone = resp.timezone;
+        let sunrise = resp.sys.sunrise;
+        let sunset = resp.sys.sunset;
+
+        display_print!(
+            out,
+            conf.display_mode,
+            "\u{e34c}  ",
+            "\u{2600}\u{fe0f} \u{2b06}\u{fe0f} ",
+            "S "
+        );
+        let sunrise_date = FixedOffset::east(timezone).timestamp(sunrise, 0);
+        write!(out, "{} ", sunrise_date.format("%R"))?;
+
+        display_print!(
+            out,
+            conf.display_mode,
+            "\u{e34d}  ",
+            "\u{2b07}\u{fe0f} ",
+            "-> "
+        );
+        let sunset_date = FixedOffset::east(timezone).timestamp(sunset, 0);
+        write!(out, "{}", sunset_date.format("%R"))?;
 
         Ok(RenderStatus::Rendered)
     }
@@ -1172,14 +1227,9 @@ fn get_unicode(id: u16, night: bool) -> &'static str {
         // snow
         (_, 600..=609) => "\u{1f328}",
         // mist/fog/smoke/haze/dust/sandstorm/ash
-        (_, 701)
-        | (_, 711)
-        | (_, 721)
-        | (_, 731)
-        | (_, 761)
-        | (_, 741)
-        | (_, 751)
-        | (_, 762) => "\u{1f32b}",
+        (_, 701) | (_, 711) | (_, 721) | (_, 731) | (_, 761) | (_, 741) | (_, 751) | (_, 762) => {
+            "\u{1f32b}"
+        }
         // squalls
         (_, 771) => "\u{1f32c}",
         // tornado
