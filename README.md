@@ -217,7 +217,8 @@ See the default configuration file [config.yml](config.yml) and browse the [exam
     * `temp_style` (style): the style used to display the temperature, see the `temperature` segment.
     * `hours` (integer): the number of hours to display (defaults to 3).
     * `step` (integer): the number of hours to step over between forecasts (defaults to 2).
-  * `alerts`: weather alerts for the current location.
+  * `alerts`: the weather alerts for the current location.
+  * `daytime`: the sunrise and sunset times for the current day.
 
 A style attribute is an object with 6 attributes, all optional:
 
