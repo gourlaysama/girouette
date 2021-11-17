@@ -5,6 +5,10 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Features
+
+* New `daytime` segment to display sunrise and sunset times for the current day.
+
 ## [0.6.3] - 2021-10-25
 
 ### Features
