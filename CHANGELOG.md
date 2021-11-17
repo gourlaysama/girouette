@@ -5,6 +5,8 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+## [0.6.4] - 2021-11-17
+
 ### Features
 
 * New `daytime` segment to display sunrise and sunset times for the current day.
@@ -194,7 +196,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.3...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.4...HEAD
+[0.6.4]: https://github.com/gourlaysama/girouette/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/gourlaysama/girouette/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/gourlaysama/girouette/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/gourlaysama/girouette/compare/v0.6.0...v0.6.1
