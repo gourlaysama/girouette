@@ -2,7 +2,7 @@ use crate::api::Response;
 use crate::{api::current::Wind, DisplayMode, WindType};
 use crate::{config::*, serde_utils::*, QueryKind};
 use anyhow::*;
-use chrono::{FixedOffset, Locale, TimeZone, Utc};
+use chrono::{Datelike, FixedOffset, Locale, TimeZone, Utc};
 use log::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -828,6 +828,7 @@ impl HourlyForecast {
         let resp = resp.as_forecast()?;
         let hourly = resp.hourly.as_deref().unwrap_or_default();
         let timezone = FixedOffset::east(resp.timezone_offset);
+        let current_instant = Utc.timestamp(resp.current.dt, 0);
         let mut first = true;
         out.set_color(conf.base_style)?;
 
@@ -848,8 +849,8 @@ impl HourlyForecast {
                 } else {
                     write!(out, "   ")?;
                 }
-                let source_date = timezone.timestamp(dt, 0);
-                write!(out, "{}h ", source_date.format("%k"))?;
+                let instant = timezone.timestamp(dt, 0);
+                write!(out, "{}h ", instant.format("%k"))?;
 
                 let wind = Wind {
                     speed: hour.wind_speed,
@@ -857,8 +858,21 @@ impl HourlyForecast {
                     gale: hour.wind_gust,
                 };
 
-                let instant = Utc.timestamp(dt, 0);
-                let night = if let (Some(sunset), Some(sunrise)) =
+                let night = if instant.day() != current_instant.day() {
+                    // use current-day sunrise/sunset to estimate if time tomorrow is day/night;
+                    // it's close enough not to matter, considering we are using 1h increments
+                    if let (Some(sunset), Some(sunrise)) =
+                        (resp.current.sunset, resp.current.sunrise)
+                    {
+                        let sunrise_dt = timezone.timestamp(sunrise, 0).time();
+                        let sunset_dt = timezone.timestamp(sunset, 0).time();
+                        let date = instant.date();
+                        instant >= date.and_time(sunset_dt).unwrap_or(instant)
+                            || instant <= date.and_time(sunrise_dt).unwrap_or(instant)
+                    } else {
+                        false
+                    }
+                } else if let (Some(sunset), Some(sunrise)) =
                     (resp.current.sunset, resp.current.sunrise)
                 {
                     instant >= Utc.timestamp(sunset, 0) || instant <= Utc.timestamp(sunrise, 0)
