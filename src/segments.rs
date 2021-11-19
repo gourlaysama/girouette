@@ -330,21 +330,13 @@ impl WeatherIcon {
         out: &mut StandardStream,
         display_mode: DisplayMode,
         style: &Option<ColorSpec>,
-        sunset: Option<i64>,
-        sunrise: Option<i64>,
+        night: bool,
         wind: Option<&Wind>,
         id: u16,
     ) -> Result<RenderStatus> {
         if let Some(ref style) = style {
             out.set_color(style)?;
         }
-
-        let now = Utc::now();
-        let night = if let (Some(sunset), Some(sunrise)) = (sunset, sunrise) {
-            now >= Utc.timestamp(sunset, 0) || now <= Utc.timestamp(sunrise, 0)
-        } else {
-            false
-        };
 
         display_print!(
             out,
@@ -381,15 +373,10 @@ impl WeatherIcon {
             warn!("no weather icon to display in ascii mode!");
         }
 
-        WeatherIcon::render_icon(
-            out,
-            conf.display_mode,
-            &self.style,
-            Some(sunset),
-            Some(sunrise),
-            wind,
-            id,
-        )
+        let now = Utc.timestamp(resp.dt, 0);
+        let night = now >= Utc.timestamp(sunset, 0) || now <= Utc.timestamp(sunrise, 0);
+
+        WeatherIcon::render_icon(out, conf.display_mode, &self.style, night, wind, id)
     }
 }
 
@@ -792,8 +779,7 @@ impl DailyForecast {
                     out,
                     conf.display_mode,
                     &self.style,
-                    None,
-                    None,
+                    false,
                     Some(&wind),
                     day.weather[0].id,
                 )?;
@@ -851,11 +837,11 @@ impl HourlyForecast {
 
         let mut i = 0;
         while i * step + 1 < end && i < hours {
-            let day = &hourly[i * step + 1];
+            let hour = &hourly[i * step + 1];
 
-            let dt = day.dt;
+            let dt = hour.dt;
 
-            if let crate::api::one_call::Temperature::Value(t) = day.temp {
+            if let crate::api::one_call::Temperature::Value(t) = hour.temp {
                 if first {
                     write!(out, " ")?;
                     first = false;
@@ -866,19 +852,27 @@ impl HourlyForecast {
                 write!(out, "{}h ", source_date.format("%k"))?;
 
                 let wind = Wind {
-                    speed: day.wind_speed,
-                    deg: day.wind_deg,
-                    gale: day.wind_gust,
+                    speed: hour.wind_speed,
+                    deg: hour.wind_deg,
+                    gale: hour.wind_gust,
+                };
+
+                let instant = Utc.timestamp(dt, 0);
+                let night = if let (Some(sunset), Some(sunrise)) =
+                    (resp.current.sunset, resp.current.sunrise)
+                {
+                    instant >= Utc.timestamp(sunset, 0) || instant <= Utc.timestamp(sunrise, 0)
+                } else {
+                    false
                 };
 
                 WeatherIcon::render_icon(
                     out,
                     conf.display_mode,
                     &self.style,
-                    None,
-                    None,
+                    night,
                     Some(&wind),
-                    day.weather[0].id,
+                    hour.weather[0].id,
                 )?;
                 display_print!(out, conf.display_mode, "  ", " ", "");
 
