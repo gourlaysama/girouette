@@ -7,6 +7,10 @@
 
 ## [0.6.4] - 2021-11-17
 
+### Fixes
+
+* Hourly forecast icons now properly indicate daytime/nighttime.
+
 ### Features
 
 * New `daytime` segment to display sunrise and sunset times for the current day.
