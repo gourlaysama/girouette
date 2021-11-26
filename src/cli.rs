@@ -121,7 +121,7 @@ impl ProgramOptions {
             2 => LevelFilter::Warn,
             3 => LevelFilter::Info,
             4 => LevelFilter::Debug,
-            5..=i8::MAX => LevelFilter::Trace,
+            5.. => LevelFilter::Trace,
         };
 
         if level != default {
