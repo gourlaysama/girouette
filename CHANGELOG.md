@@ -5,11 +5,11 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
-## [0.6.4] - 2021-11-17
-
 ### Fixes
 
 * Hourly forecast icons now properly indicate daytime/nighttime.
+
+## [0.6.4] - 2021-11-17
 
 ### Features
 
