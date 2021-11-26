@@ -5,6 +5,8 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+## [0.6.5] - 2021-11-26
+
 ### Fixes
 
 * Hourly forecast icons now properly indicate daytime/nighttime.
@@ -200,7 +202,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.4...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.5...HEAD
+[0.6.5]: https://github.com/gourlaysama/girouette/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/gourlaysama/girouette/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/gourlaysama/girouette/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/gourlaysama/girouette/compare/v0.6.1...v0.6.2
