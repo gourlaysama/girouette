@@ -355,9 +355,7 @@ impl WeatherClient {
                 match resp {
                     CResponse::Success(w) => {
                         if self.cache_length.is_some() {
-                            if let Err(e) =
-                                self.write_cache(kind, location, language.as_deref(), &bytes)
-                            {
+                            if let Err(e) = self.write_cache(kind, location, language, &bytes) {
                                 warn!("error while writing cached response: {}", e);
                             }
                         }
@@ -376,9 +374,7 @@ impl WeatherClient {
                 match resp {
                     OResponse::Success(w) => {
                         if self.cache_length.is_some() {
-                            if let Err(e) =
-                                self.write_cache(kind, location, language.as_deref(), &bytes)
-                            {
+                            if let Err(e) = self.write_cache(kind, location, language, &bytes) {
                                 warn!("error while writing cached response: {}", e);
                             }
                         }

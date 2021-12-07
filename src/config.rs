@@ -2,7 +2,7 @@ use crate::{segments::*, serde_utils::*, DisplayMode, Location};
 use serde::{Deserialize, Serialize};
 use termcolor::{Color, ColorSpec};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(default)]
 pub struct ProgramConfig {
     pub key: Option<String>,
@@ -17,19 +17,6 @@ pub struct ProgramConfig {
 
     #[serde(flatten)]
     pub display_config: DisplayConfig,
-}
-
-impl Default for ProgramConfig {
-    fn default() -> Self {
-        ProgramConfig {
-            key: None,
-            location: None,
-            cache: None,
-            language: None,
-            timeout: None,
-            display_config: DisplayConfig::default(),
-        }
-    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

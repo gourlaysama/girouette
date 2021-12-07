@@ -902,21 +902,12 @@ impl HourlyForecast {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Alerts {
     pub display_mode: Option<DisplayMode>,
     #[serde(with = "option_color_spec")]
     pub style: Option<ColorSpec>,
-}
-
-impl Default for Alerts {
-    fn default() -> Self {
-        Self {
-            display_mode: Default::default(),
-            style: Default::default(),
-        }
-    }
 }
 
 impl Alerts {
@@ -1039,21 +1030,12 @@ impl Alerts {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct DayTime {
     pub display_mode: Option<DisplayMode>,
     #[serde(with = "option_color_spec")]
     pub style: Option<ColorSpec>,
-}
-
-impl Default for DayTime {
-    fn default() -> Self {
-        Self {
-            display_mode: Default::default(),
-            style: Default::default(),
-        }
-    }
 }
 
 impl DayTime {
