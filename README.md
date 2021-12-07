@@ -19,12 +19,14 @@ girouette requires an [OpenWeather API key] (free for 1 call per second). A defa
 
 Pre-compiled binaries are available on the [Release Page] for x86_64 Linux. They are statically linked and do not support the `geoclue` feature (no auto-geolocation).
 
-If you are a **Fedora** (32+) user, you can install girouette with:
+If you are a **Fedora/RHEL/CentOS-Stream** user, you can install girouette with:
 
 ```sh
 sudo dnf copr enable gourlaysama/girouette
 sudo dnf install girouette
 ```
+
+(Supported archs are: aarch64, armhfp, ppc64le or x86_64 on Fedora, and the subset supported by COPR for RHEL/CentOS)
 
 Otherwise you will need to [build from source](#building-from-source).
 
