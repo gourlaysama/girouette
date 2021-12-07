@@ -247,7 +247,7 @@ impl WeatherClient {
                             if let OResponse::Success(resp) = serde_json::from_reader(f)? {
                                 info!("using cached response for {}", location);
 
-                                return Ok(Some(Response::from_forecast(resp)));
+                                return Ok(Some(Response::from_forecast(*resp)));
                             }
                         }
                         QueryKind::Both => bail!("internal error: query_cache(Both)"),
@@ -378,7 +378,7 @@ impl WeatherClient {
                                 warn!("error while writing cached response: {}", e);
                             }
                         }
-                        Ok(Response::from_forecast(w))
+                        Ok(Response::from_forecast(*w))
                     }
                     OResponse::OtherInt { cod, message } => {
                         handle_error(StatusCode::from_u16(cod)?, &message, location)

@@ -1,7 +1,7 @@
 #[derive(serde::Deserialize)]
 #[serde(untagged)]
 pub enum ApiResponse {
-    Success(OneCallResponse),
+    Success(Box<OneCallResponse>),
     // hack: Openweather API returns some very ugly json
     OtherInt { cod: u16, message: String },
     OtherString { cod: String, message: String },
