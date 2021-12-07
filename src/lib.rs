@@ -416,6 +416,14 @@ pub enum QueryKind {
     Both,
 }
 
+#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UnitMode {
+    Standard,
+    Metric,
+    Imperial,
+}
+
 fn make_openweather_language_codes(s: &str) -> Cow<str> {
     // openweather supports these directly
     if let "zh_CN" | "zh_TW" | "pt_BR" = s {
