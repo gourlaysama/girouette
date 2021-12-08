@@ -1,6 +1,6 @@
 use crate::api::Response;
 use crate::{api::current::Wind, DisplayMode, WindType};
-use crate::{config::*, serde_utils::*, QueryKind};
+use crate::{config::*, serde_utils::*, QueryKind, UnitMode};
 use anyhow::*;
 use chrono::{Datelike, FixedOffset, Locale, TimeZone, Utc};
 use log::*;
@@ -33,6 +33,7 @@ struct RenderConf<'a> {
     base_style: &'a ColorSpec,
     display_mode: DisplayMode,
     locale: Locale,
+    units: UnitMode,
 }
 
 impl Renderer {
@@ -78,6 +79,7 @@ impl Renderer {
             base_style: &self.display_config.base_style,
             display_mode: self.display_config.display_mode,
             locale,
+            units: self.display_config.units,
         };
 
         let mut status = self.display_config.segments[0].render(out, &conf, resp)?;
@@ -289,7 +291,7 @@ impl Temperature {
 
         if self.min_max {
             display_print!(out, display_mode, " \u{f175}", " \u{2b07}\u{fe0f} ", " (m ");
-            display_temp(&self.style, out, temp_min, conf.base_style)?;
+            display_temp(&self.style, out, temp_min, conf.base_style, conf.units)?;
             display_print!(
                 out,
                 display_mode,
@@ -297,19 +299,19 @@ impl Temperature {
                 " \u{1f321}\u{fe0f} ",
                 " T "
             );
-            display_temp(&self.style, out, temp, conf.base_style)?;
+            display_temp(&self.style, out, temp, conf.base_style, conf.units)?;
             display_print!(out, display_mode, " \u{f176}", " \u{2b06}\u{fe0f} ", " M ");
-            display_temp(&self.style, out, temp_max, conf.base_style)?;
+            display_temp(&self.style, out, temp_max, conf.base_style, conf.units)?;
             if let DisplayMode::Ascii = display_mode {
                 write!(out, ")")?;
             }
         } else {
             display_print!(out, display_mode, "\u{e350} ", "\u{1f321}\u{fe0f} ", "T ");
-            display_temp(&self.style, out, temp, conf.base_style)?;
+            display_temp(&self.style, out, temp, conf.base_style, conf.units)?;
         }
         if self.feels_like {
             write!(out, " (feels ")?;
-            display_temp(&self.style, out, feels_like, conf.base_style)?;
+            display_temp(&self.style, out, feels_like, conf.base_style, conf.units)?;
             write!(out, ")")?;
         }
 
@@ -791,7 +793,7 @@ impl DailyForecast {
                 )?;
                 display_print!(out, conf.display_mode, "  ", " ", "");
 
-                display_temp(&self.temp_style, out, t.day, conf.base_style)?;
+                display_temp(&self.temp_style, out, t.day, conf.base_style, conf.units)?;
 
                 out.set_color(conf.base_style)?;
             }
@@ -896,7 +898,7 @@ impl HourlyForecast {
                 )?;
                 display_print!(out, conf.display_mode, "  ", " ", "");
 
-                display_temp(&self.temp_style, out, t, conf.base_style)?;
+                display_temp(&self.temp_style, out, t, conf.base_style, conf.units)?;
 
                 out.set_color(conf.base_style)?;
             }
@@ -1085,10 +1087,16 @@ fn display_temp(
     out: &mut StandardStream,
     temp: f32,
     base_style: &ColorSpec,
+    units: UnitMode,
 ) -> Result<()> {
     match color_scale {
         ScaledColor::Scaled => {
-            let temp_idx = (temp.round() + 16f32).min(56f32).max(0f32) as usize;
+            let c = match units {
+                UnitMode::Standard => (temp - 273.15),
+                UnitMode::Metric => temp,
+                UnitMode::Imperial => (temp - 32f32) * 0.555_555_6,
+            };
+            let temp_idx = (c.round() + 16f32).min(56f32).max(0f32) as usize;
 
             out.set_color(
                 base_style
@@ -1105,7 +1113,13 @@ fn display_temp(
 
     write!(out, "{:.1}", temp)?;
     out.set_color(base_style)?;
-    write!(out, " °C")?;
+
+    match units {
+        UnitMode::Standard => write!(out, " K")?,
+        UnitMode::Metric => write!(out, " °C")?,
+        UnitMode::Imperial => write!(out, " °F")?,
+    };
+
     Ok(())
 }
 
