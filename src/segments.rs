@@ -1082,7 +1082,7 @@ fn display_temp(
 ) -> Result<()> {
     match color_scale {
         ScaledColor::Scaled => {
-            let temp_idx = (temp.round() + 16f32).min(57f32).max(0f32) as usize;
+            let temp_idx = (temp.round() + 16f32).min(56f32).max(0f32) as usize;
 
             out.set_color(
                 base_style

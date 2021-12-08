@@ -5,6 +5,10 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Fixes
+
+* Fixed index-out-of-bounds crash when using the temperature color scale with very high temperatures.
+
 ## [0.6.5] - 2021-11-26
 
 ### Fixes
