@@ -7,7 +7,7 @@ pub mod one_call;
 pub struct Weather {
     pub id: u16,
     pub main: String,
-    pub description: String,
+    pub description: Option<String>,
     pub icon: String,
 }
 

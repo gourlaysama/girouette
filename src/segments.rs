@@ -406,6 +406,12 @@ impl WeatherDescription {
     ) -> Result<RenderStatus> {
         let description = &resp.as_current()?.weather[0].description;
 
+        let description = if let Some(d) = description {
+            d
+        } else {
+            return Ok(RenderStatus::Empty);
+        };
+
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
@@ -1082,7 +1088,7 @@ fn display_temp(
 ) -> Result<()> {
     match color_scale {
         ScaledColor::Scaled => {
-            let temp_idx = (temp.round() + 16f32).min(57f32).max(0f32) as usize;
+            let temp_idx = (temp.round() + 16f32).min(56f32).max(0f32) as usize;
 
             out.set_color(
                 base_style
