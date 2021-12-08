@@ -406,6 +406,12 @@ impl WeatherDescription {
     ) -> Result<RenderStatus> {
         let description = &resp.as_current()?.weather[0].description;
 
+        let description = if let Some(d) = description {
+            d
+        } else {
+            return Ok(RenderStatus::Empty);
+        };
+
         if let Some(ref style) = self.style {
             out.set_color(style)?;
         }
