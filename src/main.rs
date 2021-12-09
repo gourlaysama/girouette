@@ -1,4 +1,4 @@
-use anyhow::*;
+use anyhow::{anyhow, Context, Result};
 use env_logger::{Builder, Env};
 use girouette::{
     cli::ProgramOptions, config::ProgramConfig, show, Girouette, Location, WeatherClient,
@@ -132,6 +132,8 @@ async fn find_location(timeout: Duration) -> Result<Location> {
 
 #[cfg(not(feature = "geoclue"))]
 async fn find_location(_timeout: Duration) -> Result<Location> {
+    use anyhow::bail;
+
     info!("no location to query, trying geoclue");
     bail!("geolocalization unsupported: set a location with '-l/--location' or in the config file")
 }

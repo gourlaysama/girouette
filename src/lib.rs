@@ -9,7 +9,7 @@ mod serde_utils;
 use std::{borrow::Cow, time::Duration};
 
 use crate::config::DisplayConfig;
-use anyhow::*;
+use anyhow::{bail, Context, Result};
 use api::{current::ApiResponse as CResponse, one_call::ApiResponse as OResponse, Response};
 use directories_next::ProjectDirs;
 use log::*;
