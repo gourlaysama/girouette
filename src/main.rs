@@ -179,6 +179,7 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
     set_conf_from_options(&mut conf, &options.location, "location")?;
     set_conf_from_options(&mut conf, &options.cache, "cache")?;
     set_conf_from_options(&mut conf, &options.language, "language")?;
+    set_conf_from_options(&mut conf, &options.units, "units")?;
 
     // cache: none means disabled cache
     if let Some(cache) = conf.get::<Option<String>>("cache").unwrap_or(None) {

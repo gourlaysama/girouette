@@ -1,6 +1,6 @@
 use crate::api::Response;
 use crate::{api::current::Wind, DisplayMode, WindType};
-use crate::{config::*, serde_utils::*, QueryKind};
+use crate::{config::*, serde_utils::*, QueryKind, UnitMode};
 use anyhow::*;
 use chrono::{Datelike, FixedOffset, Locale, TimeZone, Utc};
 use log::*;
@@ -33,6 +33,7 @@ struct RenderConf<'a> {
     base_style: &'a ColorSpec,
     display_mode: DisplayMode,
     locale: Locale,
+    units: UnitMode,
 }
 
 impl Renderer {
@@ -78,6 +79,7 @@ impl Renderer {
             base_style: &self.display_config.base_style,
             display_mode: self.display_config.display_mode,
             locale,
+            units: self.display_config.units,
         };
 
         let mut status = self.display_config.segments[0].render(out, &conf, resp)?;
@@ -289,7 +291,7 @@ impl Temperature {
 
         if self.min_max {
             display_print!(out, display_mode, " \u{f175}", " \u{2b07}\u{fe0f} ", " (m ");
-            display_temp(&self.style, out, temp_min, conf.base_style)?;
+            display_temp(&self.style, out, temp_min, conf.base_style, conf.units)?;
             display_print!(
                 out,
                 display_mode,
@@ -297,19 +299,19 @@ impl Temperature {
                 " \u{1f321}\u{fe0f} ",
                 " T "
             );
-            display_temp(&self.style, out, temp, conf.base_style)?;
+            display_temp(&self.style, out, temp, conf.base_style, conf.units)?;
             display_print!(out, display_mode, " \u{f176}", " \u{2b06}\u{fe0f} ", " M ");
-            display_temp(&self.style, out, temp_max, conf.base_style)?;
+            display_temp(&self.style, out, temp_max, conf.base_style, conf.units)?;
             if let DisplayMode::Ascii = display_mode {
                 write!(out, ")")?;
             }
         } else {
             display_print!(out, display_mode, "\u{e350} ", "\u{1f321}\u{fe0f} ", "T ");
-            display_temp(&self.style, out, temp, conf.base_style)?;
+            display_temp(&self.style, out, temp, conf.base_style, conf.units)?;
         }
         if self.feels_like {
             write!(out, " (feels ")?;
-            display_temp(&self.style, out, feels_like, conf.base_style)?;
+            display_temp(&self.style, out, feels_like, conf.base_style, conf.units)?;
             write!(out, ")")?;
         }
 
@@ -329,6 +331,7 @@ impl WeatherIcon {
     fn render_icon(
         out: &mut StandardStream,
         display_mode: DisplayMode,
+        units: UnitMode,
         style: &Option<ColorSpec>,
         night: bool,
         wind: Option<&Wind>,
@@ -342,7 +345,13 @@ impl WeatherIcon {
             out,
             display_mode,
             {
-                let wind_type = wind.map_or(WindType::Low, |w| get_wind_type(w.speed));
+                let wind_type = wind.map_or(WindType::Low, |w| {
+                    let speed = match units {
+                        UnitMode::Metric => w.speed * 3.6,
+                        _ => w.speed,
+                    };
+                    get_wind_type(speed, units)
+                });
 
                 get_icon(id, night, &wind_type)
             },
@@ -376,17 +385,47 @@ impl WeatherIcon {
         let now = Utc.timestamp(resp.dt, 0);
         let night = now >= Utc.timestamp(sunset, 0) || now <= Utc.timestamp(sunrise, 0);
 
-        WeatherIcon::render_icon(out, conf.display_mode, &self.style, night, wind, id)
+        WeatherIcon::render_icon(
+            out,
+            conf.display_mode,
+            conf.units,
+            &self.style,
+            night,
+            wind,
+            id,
+        )
     }
 }
 
-fn get_wind_type(speed: f32) -> WindType {
-    if speed >= 35f32 {
-        WindType::High
-    } else if speed >= 20f32 {
-        WindType::Mid
-    } else {
-        WindType::Low
+fn get_wind_type(speed: f32, units: UnitMode) -> WindType {
+    match units {
+        UnitMode::Standard => {
+            if speed >= 9.722_222_f32 {
+                WindType::High
+            } else if speed >= 5.555_555_3_f32 {
+                WindType::Mid
+            } else {
+                WindType::Low
+            }
+        }
+        UnitMode::Metric => {
+            if speed >= 35f32 {
+                WindType::High
+            } else if speed >= 20_f32 {
+                WindType::Mid
+            } else {
+                WindType::Low
+            }
+        }
+        UnitMode::Imperial => {
+            if speed >= 21.747_986_f32 {
+                WindType::High
+            } else if speed >= 12.427_42_f32 {
+                WindType::Mid
+            } else {
+                WindType::Low
+            }
+        }
     }
 }
 
@@ -448,10 +487,9 @@ impl WindSpeed {
         &self,
         stdout: &mut StandardStream,
         wind: &Wind,
-        base_style: &ColorSpec,
-        display_mode: DisplayMode,
+        conf: &RenderConf,
     ) -> Result<()> {
-        let (icons, fallback) = match display_mode {
+        let (icons, fallback) = match conf.display_mode {
             DisplayMode::Ascii => (WIND_DIR_ASCII, ""),
             DisplayMode::Unicode => (WIND_DIR_UNICODE, ""),
             DisplayMode::NerdFonts => (WIND_DIR_ICONS, "\u{e3a9}"),
@@ -464,22 +502,25 @@ impl WindSpeed {
                 &icons[3 * dir_idx..3 * dir_idx + 3]
             })
             .unwrap_or(fallback);
-        if let DisplayMode::Unicode = display_mode {
+        if let DisplayMode::Unicode = conf.display_mode {
             write!(stdout, "{}\u{fe0f}", icon)?;
         } else {
             write!(stdout, "{}", icon)?;
         }
 
-        let speed = wind.speed * 3.6;
+        let speed = match conf.units {
+            UnitMode::Metric => wind.speed * 3.6,
+            _ => wind.speed,
+        };
 
-        if let WindType::High = get_wind_type(speed) {
-            display_print!(stdout, display_mode, "\u{e34b} ", " \u{1f32c} ", "");
+        if let WindType::High = get_wind_type(speed, conf.units) {
+            display_print!(stdout, conf.display_mode, "\u{e34b} ", " \u{1f32c} ", "");
         }
 
         match &self.style {
             ScaledColor::Scaled => {
                 let speed_color_idx = speed.floor() as usize;
-                let mut tmp_style = base_style.clone();
+                let mut tmp_style = conf.base_style.clone();
                 stdout.set_color(
                     tmp_style.set_fg(Some(Color::Ansi256(WIND_COLORS[speed_color_idx]))),
                 )?;
@@ -490,8 +531,13 @@ impl WindSpeed {
             _ => {}
         };
         write!(stdout, " {:.1}", speed)?;
-        stdout.set_color(base_style)?;
-        write!(stdout, " km/h")?;
+        stdout.set_color(conf.base_style)?;
+        let unit = match conf.units {
+            UnitMode::Standard => "m/s",
+            UnitMode::Metric => "km/h",
+            UnitMode::Imperial => "mph",
+        };
+        write!(stdout, " {}", unit)?;
 
         Ok(())
     }
@@ -505,7 +551,7 @@ impl WindSpeed {
         let wind = resp.as_current()?.wind.as_ref();
 
         if let Some(w) = wind {
-            self.display_wind(out, w, conf.base_style, conf.display_mode)?;
+            self.display_wind(out, w, conf)?;
             Ok(RenderStatus::Rendered)
         } else {
             Ok(RenderStatus::Empty)
@@ -784,6 +830,7 @@ impl DailyForecast {
                 WeatherIcon::render_icon(
                     out,
                     conf.display_mode,
+                    conf.units,
                     &self.style,
                     false,
                     Some(&wind),
@@ -791,7 +838,7 @@ impl DailyForecast {
                 )?;
                 display_print!(out, conf.display_mode, "  ", " ", "");
 
-                display_temp(&self.temp_style, out, t.day, conf.base_style)?;
+                display_temp(&self.temp_style, out, t.day, conf.base_style, conf.units)?;
 
                 out.set_color(conf.base_style)?;
             }
@@ -889,6 +936,7 @@ impl HourlyForecast {
                 WeatherIcon::render_icon(
                     out,
                     conf.display_mode,
+                    conf.units,
                     &self.style,
                     night,
                     Some(&wind),
@@ -896,7 +944,7 @@ impl HourlyForecast {
                 )?;
                 display_print!(out, conf.display_mode, "  ", " ", "");
 
-                display_temp(&self.temp_style, out, t, conf.base_style)?;
+                display_temp(&self.temp_style, out, t, conf.base_style, conf.units)?;
 
                 out.set_color(conf.base_style)?;
             }
@@ -1085,10 +1133,16 @@ fn display_temp(
     out: &mut StandardStream,
     temp: f32,
     base_style: &ColorSpec,
+    units: UnitMode,
 ) -> Result<()> {
     match color_scale {
         ScaledColor::Scaled => {
-            let temp_idx = (temp.round() + 16f32).min(56f32).max(0f32) as usize;
+            let c = match units {
+                UnitMode::Standard => (temp - 273.15),
+                UnitMode::Metric => temp,
+                UnitMode::Imperial => (temp - 32f32) * 0.555_555_6,
+            };
+            let temp_idx = (c.round() + 16f32).min(56f32).max(0f32) as usize;
 
             out.set_color(
                 base_style
@@ -1105,7 +1159,13 @@ fn display_temp(
 
     write!(out, "{:.1}", temp)?;
     out.set_color(base_style)?;
-    write!(out, " °C")?;
+
+    match units {
+        UnitMode::Standard => write!(out, " K")?,
+        UnitMode::Metric => write!(out, " °C")?,
+        UnitMode::Imperial => write!(out, " °F")?,
+    };
+
     Ok(())
 }
 

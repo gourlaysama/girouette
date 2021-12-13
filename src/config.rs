@@ -1,4 +1,4 @@
-use crate::{segments::*, serde_utils::*, DisplayMode, Location};
+use crate::{segments::*, serde_utils::*, DisplayMode, Location, UnitMode};
 use serde::{Deserialize, Serialize};
 use termcolor::{Color, ColorSpec};
 
@@ -27,6 +27,8 @@ pub struct DisplayConfig {
 
     pub separator: String,
 
+    pub units: UnitMode,
+
     pub display_mode: DisplayMode,
 
     #[serde(deserialize_with = "segment_vec::deserialize")]
@@ -38,6 +40,7 @@ impl Default for DisplayConfig {
         DisplayConfig {
             base_style: ColorSpec::default(),
             separator: "  ".to_owned(),
+            units: UnitMode::Metric,
             display_mode: DisplayMode::Unicode,
             segments: Vec::new(),
         }

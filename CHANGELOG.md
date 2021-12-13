@@ -5,6 +5,10 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Features
+
+* New `units` config option and `-u/--units` to choose the unit system used to display temperatures and wind speeds. Available values are: `metric` (to use `°C` and `km/h`), `imperial` (to use `°F` and `mph`) and `standard` (to use `K` and `m/s`).
+
 ### Fixes
 
 * Fixed error when OpenWeather doesn't provide a description for a weather condition.

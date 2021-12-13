@@ -6,7 +6,7 @@ pub mod geoclue;
 pub mod segments;
 mod serde_utils;
 
-use std::{borrow::Cow, time::Duration};
+use std::{borrow::Cow, fmt::Display, time::Duration};
 
 use crate::config::DisplayConfig;
 use anyhow::*;
@@ -19,8 +19,8 @@ use serde::{Deserialize, Serialize};
 use termcolor::StandardStream;
 use tokio::time::timeout;
 
-const CURRENT_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather?units=metric";
-const ONECALL_API_URL: &str = "https://api.openweathermap.org/data/2.5/onecall?units=metric";
+const CURRENT_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
+const ONECALL_API_URL: &str = "https://api.openweathermap.org/data/2.5/onecall";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(from = "String", into = "String")]
@@ -112,6 +112,7 @@ impl Girouette {
                     loc,
                     self.key.clone(),
                     self.language.as_deref(),
+                    self.config.units,
                 )
                 .await?;
             response.merge(res);
@@ -130,6 +131,7 @@ impl Girouette {
                     &new_loc,
                     self.key.clone(),
                     self.language.as_deref(),
+                    self.config.units,
                 )
                 .await?;
             response.merge(res);
@@ -176,6 +178,7 @@ impl WeatherClient {
         kind: QueryKind,
         location: &Location,
         language: Option<&str>,
+        units: UnitMode,
     ) -> Result<std::path::PathBuf> {
         if let Some(p) = WeatherClient::directories() {
             let prefix = match kind {
@@ -184,14 +187,20 @@ impl WeatherClient {
                 QueryKind::Both => bail!("internal error: find_cache_for(Both)"),
             };
 
+            let prefix2 = match units {
+                UnitMode::Standard => "S",
+                UnitMode::Metric => "",
+                UnitMode::Imperial => "I",
+            };
+
             let suffix = match location {
                 Location::LatLon(lat, lon) => format!("{}_{}", lat, lon),
                 Location::Place(p) => self.clean_up_for_path(p),
             };
             let f = if let Some(lang) = language {
-                format!("results/{}-{}-{}.json", prefix, lang, suffix)
+                format!("results/{}{}-{}-{}.json", prefix, prefix2, lang, suffix)
             } else {
-                format!("results/{}-{}.json", prefix, suffix)
+                format!("results/{}{}-{}.json", prefix, prefix2, suffix)
             };
             let file = p.cache_dir().join(f);
             debug!("looking for cache file at '{}'", file.display());
@@ -226,9 +235,10 @@ impl WeatherClient {
         kind: QueryKind,
         location: &Location,
         language: Option<&str>,
+        units: UnitMode,
     ) -> Result<Option<Response>> {
         if let Some(cache_length) = self.cache_length {
-            let path = self.find_cache_for(kind, location, language)?;
+            let path = self.find_cache_for(kind, location, language, units)?;
 
             if path.exists() {
                 let m = std::fs::metadata(&path)?;
@@ -268,9 +278,10 @@ impl WeatherClient {
         kind: QueryKind,
         location: &Location,
         language: Option<&str>,
+        units: UnitMode,
         bytes: &[u8],
     ) -> Result<()> {
-        let path = self.find_cache_for(kind, location, language)?;
+        let path = self.find_cache_for(kind, location, language, units)?;
         debug!("writing cache for {}", location);
         std::fs::write(path, bytes)?;
 
@@ -283,13 +294,14 @@ impl WeatherClient {
         location: &Location,
         key: String,
         language: Option<&str>,
+        units: UnitMode,
     ) -> Result<Response> {
         // Adapt between locales and Openweather language codes:
         // the codes OW accepts are a mix of ISO 639-1 language codes,
         // ISO 3166 country codes and locale-like codes...
         let language = language.map(make_openweather_language_codes);
 
-        match self.query_cache(kind, location, language.as_deref()) {
+        match self.query_cache(kind, location, language.as_deref(), units) {
             Ok(Some(resp)) => return Ok(resp),
             Ok(None) => {}
             Err(e) => {
@@ -297,7 +309,7 @@ impl WeatherClient {
             }
         }
 
-        self.query_api(kind, location, key, language.as_deref())
+        self.query_api(kind, location, key, language.as_deref(), units)
             .await
     }
 
@@ -307,6 +319,7 @@ impl WeatherClient {
         location: &Location,
         key: String,
         language: Option<&str>,
+        units: UnitMode,
     ) -> Result<Response> {
         debug!("querying {:?} with '{:?}' OpenWeather API", location, kind);
         let mut params = Vec::with_capacity(3);
@@ -323,6 +336,8 @@ impl WeatherClient {
         }
 
         params.push(("appid", key));
+
+        params.push(("units", units.to_string()));
 
         let api_url = match kind {
             QueryKind::Current => CURRENT_API_URL,
@@ -355,7 +370,9 @@ impl WeatherClient {
                 match resp {
                     CResponse::Success(w) => {
                         if self.cache_length.is_some() {
-                            if let Err(e) = self.write_cache(kind, location, language, &bytes) {
+                            if let Err(e) =
+                                self.write_cache(kind, location, language, units, &bytes)
+                            {
                                 warn!("error while writing cached response: {}", e);
                             }
                         }
@@ -374,7 +391,9 @@ impl WeatherClient {
                 match resp {
                     OResponse::Success(w) => {
                         if self.cache_length.is_some() {
-                            if let Err(e) = self.write_cache(kind, location, language, &bytes) {
+                            if let Err(e) =
+                                self.write_cache(kind, location, language, units, &bytes)
+                            {
                                 warn!("error while writing cached response: {}", e);
                             }
                         }
@@ -414,6 +433,26 @@ pub enum QueryKind {
     Current,
     ForeCast,
     Both,
+}
+
+#[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UnitMode {
+    Standard,
+    Metric,
+    Imperial,
+}
+
+impl Display for UnitMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let o = match self {
+            UnitMode::Standard => "standard",
+            UnitMode::Metric => "metric",
+            UnitMode::Imperial => "imperial",
+        };
+
+        f.write_str(o)
+    }
 }
 
 fn make_openweather_language_codes(s: &str) -> Cow<str> {

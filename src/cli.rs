@@ -59,6 +59,20 @@ pub struct ProgramOptions {
     /// OpenWeather only supports a subset of all valid LANG values.
     pub language: Option<String>,
 
+    #[structopt(short, long, possible_values(&["metric", "imperial", "standard"]))]
+    /// Units to use when displaying temperatures and speeds.
+    /// 
+    /// Possible units are:
+    /// 
+    /// - metric: Celsius temperatures and kilometers/hour speeds (the default),
+    /// 
+    /// - imperial: Fahrenheit temperatures and miles/hour speeds,
+    /// 
+    /// - standard: Kelvin temperatures and meters/second speeds.
+    /// 
+    /// This option overrides the corresponding value from the config.
+    pub units: Option<String>,
+
     #[structopt(long)]
     /// Removes all cached responses and exits.
     ///
