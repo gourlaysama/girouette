@@ -126,6 +126,19 @@ cargo build --release --no-default-features --features default-static --target x
         * Geographic coordinates (lat,lon): "35.68,139.69" This option overrides
           the corresponding value from the config.
 
+-u, --units <units>
+        Units to use when displaying temperatures and speeds.
+
+        Possible units are:
+
+        - metric: Celsius temperatures and kilometers/hour speeds (the default),
+
+        - imperial: Fahrenheit temperatures and miles/hour speeds,
+
+        - standard: Kelvin temperatures and meters/second speeds.
+
+        This option overrides the corresponding value from the config.
+
     --clean-cache
         Removes all cached responses and exits.
 
@@ -178,6 +191,7 @@ girouette --print-default-config > myconfig.yml
   * Can be any name of a place.
   * Can be a tuple of latitude, longitude (e.g. `"35.68,139.69"`)
 * `separator` (string): a separator string to use between segments. Defaults to two white-space characters `"  "`.
+* `units` (string: `metric`, `imperial` or `standard`): unit system to use when displaying temperatures and speeds. Defaults to `metric`.
 * `cache` (string): how long to cache responses from the API (can be overridden on the command-line with `-c/--cache`), or `none` to disable it.
   If there is a cached response younger than the duration given as argument, it is returned directly. Otherwise, it queries the API and write the response to the cache for use by a later invocation.
   NOTE: No response is written to the cache if this option isn't set. The invocation doing the caching and the one potentially querying it *both* need this option set.

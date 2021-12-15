@@ -17,6 +17,16 @@ location: "London, UK"
 # defaults to two whitespace charaters "  "
 #separator: " | "
 
+# Units to use when displaying temperatures and speeds.
+# Possible units are:
+#
+#  - metric: Celsius temperatures and kilometers/hour speeds (the default),
+#
+#  - imperial: Fahrenheit temperatures and miles/hour speeds,
+#
+#  - standard: Kelvin temperatures and meters/second speeds.
+#units: "metric"
+
 # Caching of API responses
 #
 # Value can be a duration ("1h", "2 days", "10min") or "none" to disable it
