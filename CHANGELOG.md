@@ -5,6 +5,8 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+## [0.6.6] - 2021-12-15
+
 ### Features
 
 * New `units` config option and `-u/--units` to choose the unit system used to display temperatures and wind speeds. Available values are: `metric` (to use `°C` and `km/h`), `imperial` (to use `°F` and `mph`) and `standard` (to use `K` and `m/s`).
@@ -211,7 +213,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.5...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.6...HEAD
+[0.6.6]: https://github.com/gourlaysama/girouette/compare/v0.6.5...v0.6.6
 [0.6.5]: https://github.com/gourlaysama/girouette/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/gourlaysama/girouette/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/gourlaysama/girouette/compare/v0.6.2...v0.6.3
