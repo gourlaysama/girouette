@@ -1027,6 +1027,20 @@ impl Alerts {
                             "\u{1f3d6}\u{fe0f}  ",
                             ""
                         ),
+                        "extreme temperature value" => display_print!(
+                            out,
+                            conf.display_mode,
+                            "\u{e350} ",
+                            "\u{1f321}\u{fe0f}  ",
+                            ""
+                        ),
+                        "snow/ice" => display_print!(
+                            out,
+                            conf.display_mode,
+                            "\u{e36f} ",
+                            "\u{2744}\u{fe0f}  ",
+                            ""
+                        ),
                         a => {
                             debug!("no icon for tag: {}; ignoring", a);
                         }
