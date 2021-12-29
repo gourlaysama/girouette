@@ -962,6 +962,8 @@ pub struct Alerts {
     pub display_mode: Option<DisplayMode>,
     #[serde(with = "option_color_spec")]
     pub style: Option<ColorSpec>,
+    pub description: bool,
+    pub sender: bool,
 }
 
 impl Alerts {
@@ -1027,6 +1029,20 @@ impl Alerts {
                             "\u{1f3d6}\u{fe0f}  ",
                             ""
                         ),
+                        "extreme temperature value" => display_print!(
+                            out,
+                            conf.display_mode,
+                            "\u{e350} ",
+                            "\u{1f321}\u{fe0f}  ",
+                            ""
+                        ),
+                        "snow/ice" => display_print!(
+                            out,
+                            conf.display_mode,
+                            "\u{e36f} ",
+                            "\u{2744}\u{fe0f}  ",
+                            ""
+                        ),
                         a => {
                             debug!("no icon for tag: {}; ignoring", a);
                         }
@@ -1037,11 +1053,21 @@ impl Alerts {
 
             if let Some(ref style) = self.style {
                 out.set_color(style)?;
-                write!(out, "{} ", a.event)?;
+                write!(out, "{}", a.event)?;
                 out.set_color(conf.base_style)?;
             } else {
-                write!(out, "{} ", a.event)?;
+                write!(out, "{}", a.event)?;
             }
+
+            if self.description {
+                write!(out, ": {}", a.description.replace('\n', " "))?;
+            }
+
+            if self.sender {
+                write!(out, " ({})", a.sender_name)?;
+            }
+
+            write!(out, " ")?;
 
             let start_date = FixedOffset::east(timezone).timestamp(a.start, 0);
             let end_date = FixedOffset::east(timezone).timestamp(a.end, 0);
