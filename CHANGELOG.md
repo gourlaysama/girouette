@@ -13,7 +13,7 @@
 
 ### Fixed
 
-* Alerts for xtreme temperature events and snow/ice events were missing icons.
+* Alerts for extreme temperature events and snow/ice events were missing icons.
 
 ## [0.6.6] - 2021-12-15
 
