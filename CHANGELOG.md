@@ -5,6 +5,14 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Features
+
+* New `description` and `sender` boolean option for `alerts` segment (both default to false). If true, the full description (resp. the organization sending the alert) is displayed for each alert.
+
+### Fixed
+
+* Alerts for xtreme temperature events and snow/ice events were missing icons.
+
 ## [0.6.6] - 2021-12-15
 
 ### Features

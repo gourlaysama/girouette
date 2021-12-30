@@ -234,6 +234,8 @@ See the default configuration file [config.yml](config.yml) and browse the [exam
     * `hours` (integer): the number of hours to display (defaults to 3).
     * `step` (integer): the number of hours to step over between forecasts (defaults to 2).
   * `alerts`: the weather alerts for the current location.
+    * `description` (boolean): if yes, show the alert's full description.
+    * `sender` (boolean): if yes, show the name of the organization sending the alert.
   * `daytime`: the sunrise and sunset times for the current day.
 
 A style attribute is an object with 6 attributes, all optional:
