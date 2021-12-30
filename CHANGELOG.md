@@ -5,6 +5,8 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+## [0.6.7] - 2021-12-30
+
 ### Features
 
 * New `description` and `sender` boolean option for `alerts` segment (both default to false). If true, the full description (resp. the organization sending the alert) is displayed for each alert.
@@ -221,7 +223,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.6...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.7...HEAD
+[0.6.7]: https://github.com/gourlaysama/girouette/compare/v0.6.6...v0.6.7
 [0.6.6]: https://github.com/gourlaysama/girouette/compare/v0.6.5...v0.6.6
 [0.6.5]: https://github.com/gourlaysama/girouette/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/gourlaysama/girouette/compare/v0.6.3...v0.6.4
