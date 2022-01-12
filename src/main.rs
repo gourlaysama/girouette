@@ -5,7 +5,7 @@ use girouette::{
 };
 use log::*;
 use std::{env, time::Duration};
-use structopt::StructOpt;
+use clap::{Parser, IntoApp, FromArgMatches};
 use termcolor::*;
 use tokio::runtime;
 
@@ -14,7 +14,7 @@ const DEFAULT_TIMEOUT_SEC: u64 = 10;
 const LOG_ENV_VAR: &str = "GIROUETTE_LOG";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let options = ProgramOptions::from_args();
+    let options = ProgramOptions::parse();
 
     let mut b = Builder::default();
     b.format_timestamp(None);
@@ -52,10 +52,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn run_async() -> Result<()> {
-    let options_matches = ProgramOptions::clap().get_matches();
-    let options = ProgramOptions::from_clap(&options_matches);
+    let options_matches = ProgramOptions::into_app().get_matches();
+    let options = ProgramOptions::from_arg_matches(&options_matches)?;
 
-    if options.version {
+    if options_matches.is_present("version") {
         // HACK to disambiguate short/long invocations for the same cli option;
         // there has to be a better way of doing this...
         let i = options_matches

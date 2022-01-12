@@ -1,21 +1,29 @@
+use clap::ValueHint;
 use log::LevelFilter;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use structopt::StructOpt;
 
-#[derive(StructOpt, Debug, Serialize, Deserialize)]
-#[structopt(
+#[derive(clap::Parser, Debug, Serialize, Deserialize)]
+#[clap(
     about = "Display the current weather using the Openweather API.",
-    setting = structopt::clap::AppSettings::DisableVersion,
+    setting = clap::AppSettings::NoAutoVersion,
+    mut_arg("help", |h| h.help_heading("INFO")),
+    mut_arg("version", |h| h.help_heading("INFO")),
+    version
 )]
 pub struct ProgramOptions {
     /// OpenWeather API key (required for anything more than light testing).
     ///
     /// This option overrides the corresponding value from the config.
-    #[structopt(short, long)]
+    #[clap(short, long)]
     pub key: Option<String>,
 
-    #[structopt(short, long, allow_hyphen_values(true))]
+    #[clap(
+        short,
+        long,
+        allow_hyphen_values(true),
+        value_hint(ValueHint::FilePath)
+    )]
     /// Location to query (required if not set in config).
     ///
     /// Possible values are:
@@ -24,7 +32,7 @@ pub struct ProgramOptions {
     /// This option overrides the corresponding value from the config.
     pub location: Option<String>,
 
-    #[structopt(long)]
+    #[clap(long, value_name = "FILE")]
     /// Use the specified configuration file instead of the default.
     ///
     /// By default, girouette looks for a configuration file:
@@ -36,7 +44,7 @@ pub struct ProgramOptions {
     /// - on Windows in "%AppData%\Girouette\config\config.yml"
     pub config: Option<PathBuf>,
 
-    #[structopt(short, long)]
+    #[clap(short, long, value_name = "DURATION")]
     /// Cache responses for this long (e.g. "1m", "2 days 6h", "5 sec"), or `none` to disable it.
     ///
     /// If there is a cached response younger than the duration given as argument, it  is returned directly.
@@ -49,7 +57,7 @@ pub struct ProgramOptions {
     /// This option overrides the corresponding value from the config.
     pub cache: Option<String>,
 
-    #[structopt(short = "L", long)]
+    #[clap(short = 'L', long)]
     /// Use this language for location names, weather descriptions and date formatting.
     ///
     /// This asks OpenWeather to provide location names and weather descriptions
@@ -59,21 +67,42 @@ pub struct ProgramOptions {
     /// OpenWeather only supports a subset of all valid LANG values.
     pub language: Option<String>,
 
-    #[structopt(short, long, possible_values(&["metric", "imperial", "standard"]))]
+    #[clap(short, long, possible_values(&["metric", "imperial", "standard"]), value_name = "UNIT")]
     /// Units to use when displaying temperatures and speeds.
-    /// 
+    ///
     /// Possible units are:
-    /// 
+    ///
     /// - metric: Celsius temperatures and kilometers/hour speeds (the default),
-    /// 
+    ///
     /// - imperial: Fahrenheit temperatures and miles/hour speeds,
-    /// 
+    ///
     /// - standard: Kelvin temperatures and meters/second speeds.
-    /// 
+    ///
     /// This option overrides the corresponding value from the config.
     pub units: Option<String>,
 
-    #[structopt(long)]
+    /// Pass for more log output.
+    #[clap(
+        long,
+        short,
+        global = true,
+        parse(from_occurrences),
+        help_heading = "FLAGS"
+    )]
+    verbose: i8,
+
+    /// Pass for less log output.
+    #[clap(
+        long,
+        short,
+        global = true,
+        parse(from_occurrences),
+        conflicts_with = "verbose",
+        help_heading = "FLAGS"
+    )]
+    quiet: i8,
+
+    #[clap(long, exclusive(true), help_heading = "GLOBAL")]
     /// Removes all cached responses and exits.
     ///
     /// This empties the cache directory used when caching responses with "-c/--cache".
@@ -87,29 +116,14 @@ pub struct ProgramOptions {
     /// - on Windows in "%AppData%\Girouette\cache\results\"
     pub clean_cache: bool,
 
-    #[structopt(long)]
+    #[clap(long, exclusive(true), help_heading = "GLOBAL")]
     /// Prints the contents of the default configuration and exits.
     ///
     /// This allows creating a new configuration using the default configuration as a template.
     pub print_default_config: bool,
-
-    /// Prints version information.
-    #[structopt(short = "V", long = "version")]
-    pub version: bool,
-
-    /// Pass for more log output.
-    #[structopt(long, short, global = true, parse(from_occurrences))]
-    verbose: i8,
-
-    /// Pass for less log output.
-    #[structopt(
-        long,
-        short,
-        global = true,
-        parse(from_occurrences),
-        conflicts_with = "verbose"
-    )]
-    quiet: i8,
+    // Prints version information.
+    //#[clap(short = 'V', long = "version", help_heading = "INFO")]
+    //pub version: bool,
 }
 
 impl ProgramOptions {
@@ -121,7 +135,7 @@ impl ProgramOptions {
             2 => LevelFilter::Warn,
             3 => LevelFilter::Info,
             4 => LevelFilter::Debug,
-            5..=i8::MAX => LevelFilter::Trace,
+            5.. => LevelFilter::Trace,
         };
 
         if level != default {

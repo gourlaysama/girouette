@@ -5,6 +5,10 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Packaging
+
+* The Minimum Supported Rust Version for girouette is now 1.57.
+
 ## [0.6.7] - 2021-12-30
 
 ### Features

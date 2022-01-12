@@ -1,21 +1,23 @@
+use clap::IntoApp;
+use clap_complete::{generate_to, Shell};
 use std::env;
+use std::io::Error;
 use std::process::Command;
-use structopt::clap::Shell;
 
 include!("src/cli.rs");
 
-fn main() {
+fn main() -> Result<(), Error> {
     let outdir = match env::var_os("OUT_DIR") {
-        None => return,
+        None => return Err(Error::new(std::io::ErrorKind::Other, "no $OUT_DIR!")),
         Some(outdir) => outdir,
     };
-    let mut app = ProgramOptions::clap();
+    let mut app = ProgramOptions::into_app();
 
-    app.gen_completions("girouette", Shell::Bash, &outdir);
+    generate_to(Shell::Bash, &mut app, "girouette", &outdir)?;
 
-    app.gen_completions("girouette", Shell::Zsh, &outdir);
+    generate_to(Shell::Zsh, &mut app, "girouette", &outdir)?;
 
-    app.gen_completions("girouette", Shell::Fish, outdir);
+    generate_to(Shell::Fish, &mut app, "girouette", outdir)?;
 
     if let Some(v) = version_check::Version::read() {
         println!("cargo:rustc-env=BUILD_RUSTC={}", v)
@@ -32,6 +34,8 @@ fn main() {
         env::var("CARGO_CFG_TARGET_OS").unwrap(),
         env::var("CARGO_CFG_TARGET_ENV").unwrap(),
     );
+
+    Ok(())
 }
 
 fn get_commit_hash() -> Option<String> {

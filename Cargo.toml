@@ -1,8 +1,9 @@
 [package]
 name = "girouette"
-version = "0.6.8-dev"
+version = "0.7.0-dev"
 authors = ["Antoine Gourlay <antoine@gourlay.fr>"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.57"
 
 [dependencies]
 anyhow = "1"
@@ -33,15 +34,13 @@ dynamic = ["reqwest/default-tls"]
 static = ["reqwest/rustls-tls"]
 geoclue = ["dbus", "dbus-tokio", "futures-util"]
 
-[dependencies.structopt]
-version = "0.3"
-default-features = false
-features = ["suggestions"]
+[dependencies.clap]
+version = "3"
+features = ["derive", "cargo", "wrap_help"]
 
-[build-dependencies.structopt]
-version = "0.3"
-default-features = false
-features = ["suggestions"]
+[build-dependencies.clap]
+version = "3"
+features = ["derive", "cargo", "wrap_help"]
 
 [dependencies.config]
 version = "0.11"
@@ -65,6 +64,7 @@ optional = true
 version_check = "0.9"
 serde = { version = "1", features = ["derive"] }
 log = "0.4"
+clap_complete = "3"
 
 [profile.release]
 lto = true
