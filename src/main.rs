@@ -1,11 +1,11 @@
 use anyhow::{anyhow, Context, Result};
+use clap::{FromArgMatches, IntoApp, Parser};
 use env_logger::{Builder, Env};
 use girouette::{
     cli::ProgramOptions, config::ProgramConfig, show, Girouette, Location, WeatherClient,
 };
 use log::*;
-use std::{env, time::Duration};
-use clap::{Parser, IntoApp, FromArgMatches};
+use std::{env, path::Path, time::Duration};
 use termcolor::*;
 use tokio::runtime;
 
@@ -216,16 +216,55 @@ fn print_version(long: bool) {
         );
         println!("rustc {} ({})", env!("BUILD_RUSTC"), env!("BUILD_INFO"));
         if let Some(p) = WeatherClient::directories() {
+            let config = p.config_dir().join("config.yml");
+            let cache = p.cache_dir();
+
             println!(
-                "\nconfig location: {}",
-                p.config_dir().join("config.yml").display()
+                "\nconfig location: {} ({}found)",
+                config.display(),
+                if config.exists() { "" } else { "not " }
             );
-            println!("cache location: {}", p.cache_dir().display());
+            println!(
+                "cache location: {} (size: {})",
+                cache.display(),
+                print_size(read_dir_size(cache))
+            );
         }
         if cfg!(feature = "geoclue") {
             println!("features: geoclue")
         }
     } else {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+    }
+}
+
+fn read_dir_size(d: &Path) -> u64 {
+    let mut size = 0;
+    if let Ok(d) = d.read_dir() {
+        for e in d.flatten() {
+            if let Ok(t) = e.file_type() {
+                if t.is_dir() {
+                    size += read_dir_size(&e.path());
+                } else if t.is_file() {
+                    if let Ok(m) = e.metadata() {
+                        size += m.len();
+                    }
+                }
+            }
+        }
+    }
+
+    size
+}
+
+fn print_size(s: u64) -> String {
+    if s < 1000 {
+        format!("{} B", s)
+    } else if s < 1_000_000 {
+        let ks = s as f64 / 1000f64;
+        format!("{:.2} kiB", ks)
+    } else {
+        let ms = s as f64 / 1_000_000f64;
+        format!("{:.2} MiB", ms)
     }
 }
