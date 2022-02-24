@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use clap::{FromArgMatches, IntoApp, Parser};
+use clap::{CommandFactory, FromArgMatches, Parser};
 use env_logger::{Builder, Env};
 use girouette::{
     cli::ProgramOptions, config::ProgramConfig, show, Girouette, Location, WeatherClient,
@@ -52,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn run_async() -> Result<()> {
-    let options_matches = ProgramOptions::into_app().get_matches();
+    let options_matches = ProgramOptions::command().get_matches();
     let options = ProgramOptions::from_arg_matches(&options_matches)?;
 
     if options_matches.is_present("version") {
