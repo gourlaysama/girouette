@@ -9,6 +9,10 @@
 
 * The Minimum Supported Rust Version for girouette is now 1.57.
 
+### Changed
+
+* The `--version` output now shows if a default config file has been found and the size of the girouette cache.
+
 ## [0.6.7] - 2021-12-30
 
 ### Features
