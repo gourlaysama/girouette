@@ -80,12 +80,12 @@ async fn run_async() -> Result<()> {
 
     let conf = make_config(&options)?;
 
-    let cache_length = match conf.cache {
+    let cache_length = match conf.cache.as_deref() {
+        Some("none") | None => None,
         Some(c) => Some(
-            humantime::parse_duration(&c)
+            humantime::parse_duration(c)
                 .context("failed to parse cache length: not a valid duration")?,
         ),
-        None => None,
     };
 
     let timeout = match conf.timeout {
@@ -96,8 +96,9 @@ async fn run_async() -> Result<()> {
     };
 
     let location = match conf.location {
-        Some(loc) => loc,
+        Some(Location::Place(l)) if l == "auto" => find_location(timeout).await?,
         None => find_location(timeout).await?,
+        Some(loc) => loc,
     };
 
     let key = conf.key.clone().ok_or_else(|| {
@@ -140,10 +141,10 @@ async fn find_location(_timeout: Duration) -> Result<Location> {
 
 fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
     let mut empty = false;
-    let mut conf = config::Config::default();
+    let mut conf = config::Config::builder();
     if let Some(path) = &options.config {
         debug!("looking for config file '{}'", path.display());
-        conf.merge(config::File::from(path.as_ref()))?;
+        conf = conf.add_source(config::File::from(path.as_ref()));
         info!("using config from '{}'", path.canonicalize()?.display());
     } else if let Some(p) = WeatherClient::directories() {
         let f = p.config_dir().join("config.yml");
@@ -151,7 +152,7 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
 
         if f.exists() {
             info!("using config from '{}'", f.canonicalize()?.display());
-            conf.merge(config::File::from(f))?;
+            conf = conf.add_source(config::File::from(f));
         } else {
             empty = true;
         }
@@ -159,48 +160,33 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
     if empty {
         warn!("no config file found, using fallback");
         // fallback config so that first users see something
-        conf.merge(config::File::from_str(
+        conf = conf.add_source(config::File::from_str(
             DEFAULT_CONFIG,
             config::FileFormat::Yaml,
-        ))?;
+        ));
     };
 
     fn set_conf_from_options(
-        conf: &mut config::Config,
+        conf: config::ConfigBuilder<config::builder::DefaultState>,
         option: &Option<String>,
         key: &str,
-    ) -> Result<()> {
-        if let Some(value) = option {
-            conf.set(key, Some(value.as_str()))?;
-        }
+    ) -> Result<config::ConfigBuilder<config::builder::DefaultState>> {
+        let c = if let Some(value) = option {
+            conf.set_override(key, Some(value.as_str()))?
+        } else {
+            conf
+        };
 
-        Ok(())
+        Ok(c)
     }
 
-    set_conf_from_options(&mut conf, &options.key, "key")?;
-    set_conf_from_options(&mut conf, &options.location, "location")?;
-    set_conf_from_options(&mut conf, &options.cache, "cache")?;
-    set_conf_from_options(&mut conf, &options.language, "language")?;
-    set_conf_from_options(&mut conf, &options.units, "units")?;
+    conf = set_conf_from_options(conf, &options.key, "key")?;
+    conf = set_conf_from_options(conf, &options.location, "location")?;
+    conf = set_conf_from_options(conf, &options.cache, "cache")?;
+    conf = set_conf_from_options(conf, &options.language, "language")?;
+    conf = set_conf_from_options(conf, &options.units, "units")?;
 
-    // cache: none means disabled cache
-    if let Some(cache) = conf.get::<Option<String>>("cache").unwrap_or(None) {
-        if cache == "none" {
-            conf.set::<Option<String>>("cache", None)?;
-        }
-    }
-
-    // location: auto means the same as empty (use geoclue)
-    match conf.get::<Option<Location>>("location").unwrap_or(None) {
-        Some(Location::Place(loc)) if loc == "auto" => {
-            // we use string here since Location isn't serializable into the config
-            // but it doesn't matter for setting the Option to None
-            conf.set::<Option<String>>("location", None)?;
-        }
-        _ => {}
-    };
-
-    let conf: ProgramConfig = conf.try_into()?;
+    let conf: ProgramConfig = conf.build()?.try_deserialize()?;
     trace!("full config: {:#?}", conf);
 
     Ok(conf)
