@@ -1,4 +1,4 @@
-use clap::IntoApp;
+use clap::CommandFactory;
 use clap_complete::{generate_to, Shell};
 use std::env;
 use std::io::Error;
@@ -11,7 +11,7 @@ fn main() -> Result<(), Error> {
         None => return Err(Error::new(std::io::ErrorKind::Other, "no $OUT_DIR!")),
         Some(outdir) => outdir,
     };
-    let mut app = ProgramOptions::into_app();
+    let mut app = ProgramOptions::command();
 
     generate_to(Shell::Bash, &mut app, "girouette", &outdir)?;
 
