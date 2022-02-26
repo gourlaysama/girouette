@@ -62,7 +62,7 @@ impl Renderer {
 
         let env_locale = std::env::var("LANG").ok();
         let locale = language
-            .or_else(|| env_locale.as_deref())
+            .or(env_locale.as_deref())
             .and_then(|l| {
                 let l = if let Some(s) = l.split_once('.') {
                     s.0
