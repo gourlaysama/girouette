@@ -61,6 +61,9 @@ impl Renderer {
         out.set_color(&self.display_config.base_style)?;
 
         let env_locale = std::env::var("LANG").ok();
+        // clippy 1.57 wrongly warns about this, see https://github.com/rust-lang/rust-clippy/pull/7639#issuecomment-1050340564
+        // and the corresponding PR for context. Can be remove when MSRV is bumped.
+        #[allow(clippy::or_fun_call)]
         let locale = language
             .or(env_locale.as_deref())
             .and_then(|l| {
