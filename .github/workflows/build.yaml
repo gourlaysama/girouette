@@ -25,6 +25,9 @@ jobs:
           - 1.57.0 # Rust MSRV
     steps:
       - uses: actions/checkout@v2
+      - name: Setup
+        run: |
+          echo "::add-matcher::.github/matchers.json"
       - name: Install native dependencies
         run: |
           sudo apt-get update
@@ -48,6 +51,9 @@ jobs:
           - 1.57.0 # Rust MSRV
     steps:
       - uses: actions/checkout@v2
+      - name: Setup
+        run: |
+          echo "::add-matcher::.github/matchers.json"
       - name: Install native dependencies
         run: |
           sudo apt-get update
