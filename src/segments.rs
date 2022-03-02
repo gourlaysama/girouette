@@ -522,7 +522,7 @@ impl WindSpeed {
 
         match &self.style {
             ScaledColor::Scaled => {
-                let speed_color_idx = speed.floor() as usize;
+                let speed_color_idx = (speed.floor() as usize).min(WIND_COLORS.len() - 1).max(0);
                 let mut tmp_style = conf.base_style.clone();
                 stdout.set_color(
                     tmp_style.set_fg(Some(Color::Ansi256(WIND_COLORS[speed_color_idx]))),

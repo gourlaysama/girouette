@@ -16,6 +16,7 @@
 ### Fixed
 
 * The alert segment no longer shows an alert count when there is only one alert.
+* Fixed a crash when displaying very high winds with scaled colors.
 
 ## [0.6.7] - 2021-12-30
 
