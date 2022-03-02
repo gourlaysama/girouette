@@ -981,7 +981,9 @@ impl Alerts {
         let timezone = resp.timezone_offset;
 
         for (i, a) in alerts.iter().enumerate() {
-            write!(out, "{}. ", i + 1)?;
+            if alerts.len() != 1 {
+                write!(out, "{}. ", i + 1)?;
+            }
 
             let mut seen_tags = HashSet::new();
             for t in &a.tags {

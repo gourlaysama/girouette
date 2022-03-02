@@ -13,6 +13,10 @@
 
 * The `--version` output now shows if a default config file has been found and the size of the girouette cache.
 
+### Fixed
+
+* The alert segment no longer shows an alert count when there is only one alert.
+
 ## [0.6.7] - 2021-12-30
 
 ### Features
