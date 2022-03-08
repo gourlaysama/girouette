@@ -45,7 +45,7 @@ The location can be set and the output customized in the [configuration file](#c
 ## Building from source
 
 girouette is written in Rust, so you need a [Rust install] to build it. girouette compiles with
-Rust 1.53 or newer.
+Rust 1.57 or newer.
 
 Building a dynamically-linked girouette (the default) also requires d-bus (for geolocalization support) and OpenSSL
 (`libdbus-1-dev` and `libssl-dev` on Ubuntu, `dbus-devel` and `openssl-devel` on Fedora).
