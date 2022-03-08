@@ -5,6 +5,8 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+## [0.7.0] - 2022-03-08
+
 ### Packaging
 
 * The Minimum Supported Rust Version for girouette is now 1.57.
@@ -236,7 +238,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.6.7...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/gourlaysama/girouette/compare/v0.6.7...v0.7.0
 [0.6.7]: https://github.com/gourlaysama/girouette/compare/v0.6.6...v0.6.7
 [0.6.6]: https://github.com/gourlaysama/girouette/compare/v0.6.5...v0.6.6
 [0.6.5]: https://github.com/gourlaysama/girouette/compare/v0.6.4...v0.6.5

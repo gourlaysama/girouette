@@ -50,14 +50,14 @@ Rust 1.57 or newer.
 Building a dynamically-linked girouette (the default) also requires d-bus (for geolocalization support) and OpenSSL
 (`libdbus-1-dev` and `libssl-dev` on Ubuntu, `dbus-devel` and `openssl-devel` on Fedora).
 
-Build the latest release (0.6.7) from source with:
+Build the latest release (0.7.0) from source with:
 
 ```sh
-$ git clone https://github.com/gourlaysama/girouette -b v0.6.7
+$ git clone https://github.com/gourlaysama/girouette -b v0.7.0
 $ cd girouette
 $ cargo build --release
 $ ./target/release/girouette --version
-girouette 0.6.7
+girouette 0.7.0
 ```
 
 You can disable geolocation (and the need for d-bus and Geoclue) by building instead with:
