@@ -326,7 +326,7 @@ dependencies = [
 
 [[package]]
 name = "girouette"
-version = "0.7.0"
+version = "0.7.1-dev"
 dependencies = [
  "anyhow",
  "chrono",
