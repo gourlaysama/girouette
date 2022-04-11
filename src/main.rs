@@ -5,7 +5,12 @@ use girouette::{
     cli::ProgramOptions, config::ProgramConfig, show, Girouette, Location, WeatherClient,
 };
 use log::*;
-use std::{env, path::Path, time::Duration};
+use std::{
+    env,
+    ffi::{OsStr, OsString},
+    path::{Path, PathBuf},
+    time::Duration,
+};
 use termcolor::*;
 use tokio::runtime;
 
@@ -101,12 +106,17 @@ async fn run_async() -> Result<()> {
         Some(loc) => loc,
     };
 
-    let key = conf.key.clone().ok_or_else(|| {
+    let mut key = conf.key.ok_or_else(|| {
         anyhow!(
             "no API key for OpenWeather was found
        you can get a key over at https://openweathermap.org/appid",
         )
     })?;
+
+    if let Some('@') = key.chars().next() {
+        let key_os: OsString = key.into();
+        key = read_key(key_os.as_os_str())?;
+    }
 
     let lib = Girouette::new(
         conf.display_config,
@@ -180,16 +190,73 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
         Ok(c)
     }
 
-    conf = set_conf_from_options(conf, &options.key, "key")?;
+    //conf = set_conf_from_options(conf, &options.key, "key")?;
     conf = set_conf_from_options(conf, &options.location, "location")?;
     conf = set_conf_from_options(conf, &options.cache, "cache")?;
     conf = set_conf_from_options(conf, &options.language, "language")?;
     conf = set_conf_from_options(conf, &options.units, "units")?;
 
+    if let Some(value) = &options.key {
+        let actual_key = read_key(value.as_os_str())?;
+        conf = conf.set_override("key", Some(actual_key))?
+    }
+
     let conf: ProgramConfig = conf.build()?.try_deserialize()?;
     trace!("full config: {:#?}", conf);
 
     Ok(conf)
+}
+
+fn read_key(s: &OsStr) -> Result<String> {
+    match parse_key(s)? {
+        Ok(s) => Ok(s),
+        Err(s) => {
+            let mut p = PathBuf::from(s);
+            if p.starts_with("~/") {
+                let dirs = directories_next::UserDirs::new()
+                    .ok_or_else(|| anyhow!("failed to find user directories"))?;
+                p = dirs.home_dir().join(p.strip_prefix("~/")?)
+            }
+            if p.is_relative() {
+                let dirs = WeatherClient::directories()
+                    .ok_or_else(|| anyhow!("failed to get project directories"))?;
+                p = dirs.config_dir().join(p);
+            }
+            let mut content = std::fs::read_to_string(&p)
+                .map_err(|e| anyhow!("failed reading key '{}': {}", p.to_string_lossy(), e))?;
+            if let Some(b'\n') = content.as_bytes().last() {
+                content.pop();
+            }
+            Ok(content)
+        }
+    }
+}
+
+#[cfg(unix)]
+fn parse_key(s: &OsStr) -> Result<Result<String, &OsStr>> {
+    use std::os::unix::ffi::OsStrExt;
+    let b = s.as_bytes();
+    if b.len() > 1 && b[0] == b'@' {
+        Ok(Err(OsStr::from_bytes(&b[1..])))
+    } else {
+        Ok(Ok(String::from_utf8(b.into())?))
+    }
+}
+
+#[cfg(windows)]
+fn parse_key(s: &OsStr) -> Result<Result<String, &OsStr>> {
+    use std::os::windows::ffi::OsStrExt;
+    let b = s.encode_wide();
+    if let Some('@') = b.next() {
+        Ok(Err(OsStr::from_bytes(b.collect())))
+    } else {
+        Ok(Ok(String::from_utf8(b.into())?))
+    }
+}
+
+#[cfg(all(not(unix), not(windows)))]
+fn parse_key(s: &OsStr) -> Result<Result<String, &OsStr>> {
+    Ok(Ok(String::from_utf8(b.into())?))
 }
 
 fn print_version(long: bool) {
