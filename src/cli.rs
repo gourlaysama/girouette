@@ -1,7 +1,7 @@
 use clap::ValueHint;
 use log::LevelFilter;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::{ffi::OsString, path::PathBuf};
 
 #[derive(clap::Parser, Debug, Serialize, Deserialize)]
 #[clap(
@@ -14,9 +14,14 @@ use std::path::PathBuf;
 pub struct ProgramOptions {
     /// OpenWeather API key (required for anything more than light testing).
     ///
+    /// Can be either the key or an '@' character followed by a path to a file containing
+    /// the key. The path can either:
+    ///   * be a relative path:  will be resolved relative to girouette config directory
+    ///   * start with '~/': will be resolved relative to the user's home directory
+    ///   * be an absolute path
     /// This option overrides the corresponding value from the config.
     #[clap(short, long)]
-    pub key: Option<String>,
+    pub key: Option<OsString>,
 
     #[clap(
         short,

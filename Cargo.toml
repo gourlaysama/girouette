@@ -43,7 +43,7 @@ version = "3"
 features = ["derive", "cargo", "wrap_help"]
 
 [dependencies.config]
-version = "0.12"
+version = "0.13"
 default-features = false
 features = ["yaml"]
 
