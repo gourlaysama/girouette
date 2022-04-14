@@ -86,6 +86,15 @@ pub struct ProgramOptions {
     /// This option overrides the corresponding value from the config.
     pub units: Option<String>,
 
+    /// Run only offline with responses from the cache.
+    /// 
+    /// The cache is used unconditionally, regardless of the cache length given in the
+    /// configuration file. The network is never queried.
+    /// 
+    /// If there is no cached response for this particular location, an error will be returned.
+    #[clap(short, long, conflicts_with("cache"))]
+    pub offline: bool,
+
     /// Pass for more log output.
     #[clap(
         long,
