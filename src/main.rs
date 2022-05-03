@@ -128,7 +128,7 @@ async fn run_async() -> Result<()> {
 
     let mut stdout = StandardStream::stdout(ColorChoice::Auto);
 
-    lib.display(&location, &mut stdout).await
+    lib.display(&location, options.offline, &mut stdout).await
 }
 
 #[cfg(feature = "geoclue")]

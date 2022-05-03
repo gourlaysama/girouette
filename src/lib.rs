@@ -6,7 +6,7 @@ pub mod geoclue;
 pub mod segments;
 mod serde_utils;
 
-use std::{borrow::Cow, fmt::Display, time::Duration};
+use std::{borrow::Cow, fmt::Display, path::Path, time::Duration};
 
 use crate::config::DisplayConfig;
 use anyhow::{bail, Context, Result};
@@ -99,7 +99,12 @@ impl Girouette {
         }
     }
 
-    pub async fn display(&self, loc: &Location, out: &mut StandardStream) -> Result<()> {
+    pub async fn display(
+        &self,
+        loc: &Location,
+        offline: bool,
+        out: &mut StandardStream,
+    ) -> Result<()> {
         let mut renderer = Renderer::from(&self.config);
 
         let kind = renderer.display_kind()?;
@@ -113,6 +118,7 @@ impl Girouette {
                     self.key.clone(),
                     self.language.as_deref(),
                     self.config.units,
+                    offline,
                 )
                 .await?;
             response.merge(res);
@@ -132,6 +138,7 @@ impl Girouette {
                     self.key.clone(),
                     self.language.as_deref(),
                     self.config.units,
+                    offline,
                 )
                 .await?;
             response.merge(res);
@@ -236,37 +243,27 @@ impl WeatherClient {
         location: &Location,
         language: Option<&str>,
         units: UnitMode,
+        offline: bool,
     ) -> Result<Option<Response>> {
-        if let Some(cache_length) = self.cache_length {
+        if offline {
+            let path = self.find_cache_for(kind, location, language, units)?;
+
+            if path.exists() {
+                return parse_cached_response(path.as_path(), kind, location);
+            } else {
+                bail!("failed to find a cached response for '{}', but running offline", location);
+            }
+        } else if let Some(cache_length) = self.cache_length {
             let path = self.find_cache_for(kind, location, language, units)?;
 
             if path.exists() {
                 let m = std::fs::metadata(&path)?;
                 let elapsed = m.modified()?.elapsed()?;
                 if elapsed <= cache_length {
-                    let f = std::fs::File::open(&path)?;
-                    match kind {
-                        QueryKind::Current => {
-                            if let CResponse::Success(resp) = serde_json::from_reader(f)? {
-                                info!("using cached response for {}", location);
-
-                                return Ok(Some(Response::from_current(resp)));
-                            }
-                        }
-                        QueryKind::ForeCast => {
-                            if let OResponse::Success(resp) = serde_json::from_reader(f)? {
-                                info!("using cached response for {}", location);
-
-                                return Ok(Some(Response::from_forecast(*resp)));
-                            }
-                        }
-                        QueryKind::Both => bail!("internal error: query_cache(Both)"),
-                    }
+                    return parse_cached_response(path.as_path(), kind, location);
                 } else {
                     info!("ignoring expired cached response for {}", location);
                 }
-            } else {
-                info!("no cached response found for {}", location);
             }
         }
 
@@ -295,16 +292,20 @@ impl WeatherClient {
         key: String,
         language: Option<&str>,
         units: UnitMode,
+        offline: bool,
     ) -> Result<Response> {
         // Adapt between locales and Openweather language codes:
         // the codes OW accepts are a mix of ISO 639-1 language codes,
         // ISO 3166 country codes and locale-like codes...
         let language = language.map(make_openweather_language_codes);
 
-        match self.query_cache(kind, location, language.as_deref(), units) {
+        match self.query_cache(kind, location, language.as_deref(), units, offline) {
             Ok(Some(resp)) => return Ok(resp),
             Ok(None) => {}
             Err(e) => {
+                if offline {
+                    return Err(e);
+                }
                 warn!("error while looking for cache: {}", e);
             }
         }
@@ -410,6 +411,35 @@ impl WeatherClient {
             QueryKind::Both => bail!("internal error: query_api(Both)"),
         }
     }
+}
+
+fn parse_cached_response(
+    path: &Path,
+    kind: QueryKind,
+    location: &Location,
+) -> Result<Option<Response>, anyhow::Error> {
+    let f = std::fs::File::open(path)?;
+    Ok(match kind {
+        QueryKind::Current => {
+            if let CResponse::Success(resp) = serde_json::from_reader(f)? {
+                info!("using cached response for {}", location);
+
+                Some(Response::from_current(resp))
+            } else {
+                None
+            }
+        }
+        QueryKind::ForeCast => {
+            if let OResponse::Success(resp) = serde_json::from_reader(f)? {
+                info!("using cached response for {}", location);
+
+                Some(Response::from_forecast(*resp))
+            } else {
+                None
+            }
+        }
+        QueryKind::Both => bail!("internal error: query_cache(Both)"),
+    })
 }
 
 fn handle_error(error_code: StatusCode, message: &str, location: &Location) -> Result<Response> {
