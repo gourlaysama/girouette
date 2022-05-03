@@ -7,6 +7,7 @@
 
 ### Features
 
+* New `-o/--offline` cli option. If set, girouette will run completely offline with responses from the cache, regardless of the age of cached responses. No network connection will be made.
 * The `-k/--key` cli option and corresponding config option now support supplying a path to a file containing the key, in the form of `-k @openweather.key` (relative to girouette's config directory), `-k @~/openweather.key` (relative to the user's home directory) or `-k @/openweather.key` (absolute). If given in the config file, the path is required to be valid UTF-8.
 
 ## [0.7.0] - 2022-03-08
