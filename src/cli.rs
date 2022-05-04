@@ -87,12 +87,12 @@ pub struct ProgramOptions {
     pub units: Option<String>,
 
     /// Run only offline with responses from the cache.
-    /// 
+    ///
     /// The cache is used unconditionally, regardless of the cache length given in the
     /// configuration file. The network is never queried.
-    /// 
+    ///
     /// If there is no cached response for this particular location, an error will be returned.
-    #[clap(short, long, conflicts_with("cache"))]
+    #[clap(short, long, conflicts_with("cache"), help_heading = "FLAGS")]
     pub offline: bool,
 
     /// Pass for more log output.
