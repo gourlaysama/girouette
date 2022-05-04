@@ -5,6 +5,8 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+## [0.7.1] - 2022-05-04
+
 ### Features
 
 * New `-o/--offline` cli option. If set, girouette will run completely offline with responses from the cache, regardless of the age of cached responses. No network connection will be made.
@@ -243,7 +245,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/gourlaysama/girouette/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/gourlaysama/girouette/compare/v0.6.7...v0.7.0
 [0.6.7]: https://github.com/gourlaysama/girouette/compare/v0.6.6...v0.6.7
 [0.6.6]: https://github.com/gourlaysama/girouette/compare/v0.6.5...v0.6.6
