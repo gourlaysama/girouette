@@ -16,9 +16,10 @@ pub struct ProgramOptions {
     ///
     /// Can be either the key or an '@' character followed by a path to a file containing
     /// the key. The path can either:
-    ///   * be a relative path:  will be resolved relative to girouette config directory
+    ///   * be a relative path:  will be resolved relative to girouette's config directory
     ///   * start with '~/': will be resolved relative to the user's home directory
-    ///   * be an absolute path
+    ///   * be an absolute path.
+    /// 
     /// This option overrides the corresponding value from the config.
     #[clap(short, long)]
     pub key: Option<OsString>,
@@ -34,6 +35,7 @@ pub struct ProgramOptions {
     /// Possible values are:
     ///   * Location names: "London, UK", "Dubai"
     ///   * Geographic coordinates (lat,lon): "35.68,139.69"
+    /// 
     /// This option overrides the corresponding value from the config.
     pub location: Option<String>,
 
@@ -59,6 +61,7 @@ pub struct ProgramOptions {
     /// the one potentially querying it *both* need this option set.
     ///
     /// Recognized durations go from seconds ("seconds, second, sec, s") to years ("years, year, y").
+    /// 
     /// This option overrides the corresponding value from the config.
     pub cache: Option<String>,
 
@@ -70,6 +73,8 @@ pub struct ProgramOptions {
     ///
     /// Possible values are of the form 'aa_AA' like 'en_US' or 'fr_FR'. Note that
     /// OpenWeather only supports a subset of all valid LANG values.
+    /// 
+    /// This option overrides the corresponding value from the config.
     pub language: Option<String>,
 
     #[clap(short, long, possible_values(&["metric", "imperial", "standard"]), value_name = "UNIT")]

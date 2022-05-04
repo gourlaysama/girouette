@@ -78,6 +78,8 @@ cargo build --release --no-default-features --features default-static --target x
 ## Options
 
 ```
+OPTIONS
+
 -c, --cache <cache>          
         Cache responses for this long (e.g. "1m", "2 days 6h", "5 sec"), or `none` to
         disable it.
@@ -91,8 +93,9 @@ cargo build --release --no-default-features --features default-static --target x
         this option set.
 
         Recognized durations go from seconds ("seconds, second, sec, s") to
-        years ("years, year, y"). This option overrides the corresponding value from
-        the config.
+        years ("years, year, y").
+        
+        This option overrides the corresponding value from the config.
 
     --config <config>        
         Use the specified configuration file instead of the default.
@@ -107,6 +110,12 @@ cargo build --release --no-default-features --features default-static --target x
 -k, --key <key>              
         OpenWeather API key (required for anything more than light testing).
 
+        Can be either the key or an '@' character followed by a path to a file containing
+        the key. The path can either:
+        - be a relative path:  will be resolved relative to girouette's config directory
+        - start with '~/': will be resolved relative to the user's home directory
+        - be an absolute path.
+
         This option overrides the corresponding value from the config.
 
 -L, --language <language>
@@ -118,13 +127,16 @@ cargo build --release --no-default-features --features default-static --target x
         Possible values are of the form 'aa_AA' like 'en_US' or 'fr_FR'. Note that
         OpenWeather only supports a subset of all valid LANG values.
 
+        This option overrides the corresponding value from the config.
+
 -l, --location <location>    
         Location to query (required if not set in config).
 
         Possible values are: 
         * Location names: "London, UK", "Dubai"
-        * Geographic coordinates (lat,lon): "35.68,139.69" This option overrides
-          the corresponding value from the config.
+        * Geographic coordinates (lat,lon): "35.68,139.69"
+        
+        This option overrides the corresponding value from the config.
 
 -u, --units <units>
         Units to use when displaying temperatures and speeds.
@@ -138,6 +150,25 @@ cargo build --release --no-default-features --features default-static --target x
         - standard: Kelvin temperatures and meters/second speeds.
 
         This option overrides the corresponding value from the config.
+
+FLAGS:
+
+-o, --offline
+            Run only offline with responses from the cache.
+
+            The cache is used unconditionally, regardless of the cache length given in
+            the configuration file. The network is never queried.
+
+            If there is no cached response for this particular location, an error will
+            be returned.
+
+-q, --quiet
+        Pass for less log output
+
+-v, --verbose
+        Pass for more log output
+
+GLOBAL:
 
     --clean-cache
         Removes all cached responses and exits.
@@ -154,11 +185,7 @@ cargo build --release --no-default-features --features default-static --target x
     --print-default-config    
         Prints the contents of the default configuration and exits.
 
--q, --quiet
-        Pass for less log output
-
--v, --verbose
-        Pass for more log output
+INFO:
 
 -h, --help           
         Prints help information.
@@ -185,7 +212,7 @@ girouette --print-default-config > myconfig.yml
 
 ### Global configuration keys
 
-* `key` (string): the OpenWeather API key to use (can be overridden on the command-line with `-k/--key`). Registering a key is required for anything more than light testing.
+* `key` (string): the OpenWeather API key to use (can be overridden on the command-line with `-k/--key`). Registering a key is required for anything more than light testing. Can be an API key, or the path to a file containing the key, in the form of `@openweather.key` (relative to girouette's config directory), `@~/openweather.key` (relative to the user's home directory) or `@/openweather.key` (absolute). The path is required to be valid UTF-8.
 * `location` (string): a default location to query (can be overridden on the command-line with `-l/--location`).
   * If built with geolocation support (`geoclue` feature), can be `auto` or left empty to attempt geolocation.
   * Can be any name of a place.

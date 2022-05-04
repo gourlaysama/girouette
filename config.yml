@@ -2,6 +2,11 @@
 
 # OpenWeather API key
 #
+# Can be an API key, or the path to a file containing the key, in the form
+# of "@openweather.key" (relative to girouette's config directory),
+# "@~/openweather.key" (relative to the user's home directory) or
+# "@/openweather.key" (absolute). The path is required to be valid UTF-8.
+# 
 # This is a default key for girouette. It is rate-limited, so
 # get a free API key over at https://openweathermap.org/
 key: "467cf0f1a1d612944d2da01c515c6f26"
