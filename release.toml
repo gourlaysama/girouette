@@ -8,6 +8,7 @@ pre-release-replacements = [
   {file="README.md", search="-b v.+\n\\$", replace="-b v{{version}}\n$"},
   {file="README.md", search="--version\ngirouette .+", replace="--version\ngirouette {{version}}"},
   {file="README.md", search="latest release \\(.+\\)", replace="latest release ({{version}})"},
+  {file="doc/girouette.1.md", search="Version \\S+ \\|", replace="Version {{version}} |"},
 ]
 post-release-commit-message = "release: bumping to {{next_version}}"
 tag-message = "release: {{crate_name}} version {{version}}"
