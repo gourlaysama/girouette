@@ -5,6 +5,10 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Packaging
+
+* There is now a man page for girouette available in the release tarball (generated with pandoc, from `doc/girouette.1.md`).
+
 ## [0.7.1] - 2022-05-04
 
 ### Features
