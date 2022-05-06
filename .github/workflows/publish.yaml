@@ -23,7 +23,7 @@ jobs:
       - name: Install native dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends musl-tools
+          sudo apt-get install -y --no-install-recommends musl-tools pandoc
       - uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: -Ccodegen-units=1 -Clink-arg=-Wl,-z,relro
@@ -45,6 +45,7 @@ jobs:
           cp -p target/x86_64-unknown-linux-musl/release/build/girouette-*/out/girouette.bash "$DIST_DIR/complete"
           cp -p target/x86_64-unknown-linux-musl/release/build/girouette-*/out/girouette.fish "$DIST_DIR/complete"
           cp -p target/x86_64-unknown-linux-musl/release/build/girouette-*/out/_girouette "$DIST_DIR/complete"
+          pandoc -s --to man doc/girouette.1.md -o "$DIST_DIR/girouette.1"
           strip "$DIST_DIR/girouette"
           tar -czf "$TARGET_FILE" "$DIST_DIR"
           sha256sum "$TARGET_FILE" > "$TARGET_FILE.sha256"
