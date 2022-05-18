@@ -4,6 +4,12 @@ version = "0.7.3-dev"
 authors = ["Antoine Gourlay <antoine@gourlay.fr>"]
 edition = "2021"
 rust-version = "1.57"
+description = "A command line tool that displays the current weather in the terminal."
+documentation = "https://github.com/gourlaysama/girouette"
+homepage = "https://github.com/gourlaysama/girouette"
+repository = "https://github.com/gourlaysama/girouette"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 anyhow = "1"
@@ -68,3 +74,23 @@ clap_complete = "3"
 
 [profile.release]
 lto = true
+
+[package.metadata.deb]
+priority = "optional"
+assets = [
+    ["target/release/girouette", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/girouette/", "644"],
+    ["CHANGELOG.md", "usr/share/doc/girouette/", "644"],
+    ["LICENSE-APACHE", "usr/share/doc/girouette/", "644"],
+    ["LICENSE-MIT", "usr/share/doc/girouette/", "644"],
+    ["target/release/build/girouette-*/out/girouette.bash", "usr/share/bash-completion/completions/girouette", "644"],
+    ["target/release/build/girouette-*/out/girouette.fish", "usr/share/fish/vendor_completions.d/", "644"],
+    ["target/release/build/girouette-*/out/_girouette", "usr/share/zsh/site-functions/", "644"],
+    ["girouette.1.gz", "usr/share/man/man1/girouette.1.gz", "644"]
+]
+extended-description = """\
+girouette is a command line tool that displays the current weather (from OpenWeather)
+in the terminal.
+It supports advanced fonts like Nerd Fonts with full color output, customizable output
+segments and fallbacks to 16/256-color and simpler ASCII/Unicode support.
+"""
