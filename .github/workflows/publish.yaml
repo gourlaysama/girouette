@@ -9,8 +9,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-    name: Publish binaries
+  tarball:
+    name: Build tarball
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -50,11 +50,8 @@ jobs:
           tar -czf "$TARGET_FILE" "$DIST_DIR"
           sha256sum "$TARGET_FILE" > "$TARGET_FILE.sha256"
           echo "G_VERSION=$G_VERSION" >> $GITHUB_ENV
-      - name: Create Github release
-        id: create_release
+      - name: Upload tarball
         uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           name: girouette ${{ env.G_VERSION }}
           draft: true
@@ -62,3 +59,45 @@ jobs:
           files: |
             *.tar.gz
             *.tar.gz.sha256
+
+  debian:
+    name: Build Debian package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: x86_64-unknown-linux-musl
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libdbus-1-dev libssl-dev dpkg-dev pandoc
+      - uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: cargo-deb
+      - uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: -Ccodegen-units=1 -Clink-arg=-Wl,-z,relro
+        with:
+          command: build
+          args: --verbose --release
+      - name: Generate man page
+        run: |
+          pandoc -s --to man doc/girouette.1.md -o "girouette.1"
+          gzip girouette.1
+      - uses: actions-rs/cargo@v1
+        with:
+          command: deb
+          args: --verbose --no-build
+      - name: Upload Debian package
+        uses: softprops/action-gh-release@v1
+        with:
+          name: girouette ${{ env.G_VERSION }}
+          draft: true
+          body_path: CHANGELOG.md
+          files: |
+            target/debian/*.deb
