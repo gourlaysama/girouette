@@ -9,8 +9,27 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  init:
+    name: Open draft release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Create release text
+        run: |
+          G_TAG=${{ github.ref }}
+          G_VERSION=${G_TAG#refs/tags/v}
+          echo "G_VERSION=$G_VERSION" >> $GITHUB_ENV
+          awk "NR==3 { print \$0 }; S && /^## / { S=0 } ; S { print \$0 }; /\[$G_VERSION\][^:]/ { S=1 }; /\[OpenWeather\]:/ { print \$0 }" < CHANGELOG.md > GH_RELEASE.md
+      - name: Create Github release
+        id: gh-release
+        uses:  softprops/action-gh-release@v1
+        with:
+          name: girouette ${{ env.G_VERSION }}
+          draft: true
+          body_path: GH_RELEASE.md
   tarball:
     name: Build tarball
+    needs: init
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +43,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends musl-tools pandoc
-      - uses: actions-rs/cargo@v1
+      - name: Build static release
+        uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: -Ccodegen-units=1 -Clink-arg=-Wl,-z,relro
         with:
@@ -49,19 +69,16 @@ jobs:
           strip "$DIST_DIR/girouette"
           tar -czf "$TARGET_FILE" "$DIST_DIR"
           sha256sum "$TARGET_FILE" > "$TARGET_FILE.sha256"
-          echo "G_VERSION=$G_VERSION" >> $GITHUB_ENV
-      - name: Upload tarball
-        uses: softprops/action-gh-release@v1
-        with:
-          name: girouette ${{ env.G_VERSION }}
-          draft: true
-          body_path: CHANGELOG.md
-          files: |
-            *.tar.gz
-            *.tar.gz.sha256
-
+      - name: Upload package
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          G_TAG=${{ github.ref }}
+          G_VERSION=${G_TAG#refs/tags/}
+          gh release upload $G_VERSION *.tar.gz *.tar.gz.sha256
   debian:
     name: Build Debian package
+    needs: init
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -74,17 +91,19 @@ jobs:
       - name: Install native dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libdbus-1-dev libssl-dev dpkg-dev pandoc
-      - uses: actions-rs/cargo@v1
+          sudo apt-get install -y --no-install-recommends dpkg-dev musl-tools pandoc
+      - name: Install cargo-deb
+        uses: actions-rs/cargo@v1
         with:
           command: install
           args: cargo-deb
-      - uses: actions-rs/cargo@v1
+      - name: Build static release
+        uses: actions-rs/cargo@v1
         env:
           RUSTFLAGS: -Ccodegen-units=1 -Clink-arg=-Wl,-z,relro
         with:
           command: build
-          args: --verbose --release
+          args: --verbose --release --no-default-features --features default-static --target x86_64-unknown-linux-musl
       - name: Generate man page
         run: |
           pandoc -s --to man doc/girouette.1.md -o "girouette.1"
@@ -93,11 +112,10 @@ jobs:
         with:
           command: deb
           args: --verbose --no-build
-      - name: Upload Debian package
-        uses: softprops/action-gh-release@v1
-        with:
-          name: girouette ${{ env.G_VERSION }}
-          draft: true
-          body_path: CHANGELOG.md
-          files: |
-            target/debian/*.deb
+      - name: Upload package
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          G_TAG=${{ github.ref }}
+          G_VERSION=${G_TAG#refs/tags/}
+          gh release upload $G_VERSION "$(find target/debian/ -name "*.deb")"
