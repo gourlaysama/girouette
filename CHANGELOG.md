@@ -5,6 +5,10 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Packaging
+
+* There is now a x86_64 debian package available for download on the release page.
+
 ## [0.7.2] - 2022-05-13
 
 ### Packaging
