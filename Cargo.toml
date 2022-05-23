@@ -78,14 +78,14 @@ lto = true
 [package.metadata.deb]
 priority = "optional"
 assets = [
-    ["target/release/girouette", "usr/bin/", "755"],
+    ["target/x86_64-unknown-linux-musl/release/girouette", "usr/bin/", "755"],
     ["README.md", "usr/share/doc/girouette/", "644"],
     ["CHANGELOG.md", "usr/share/doc/girouette/", "644"],
     ["LICENSE-APACHE", "usr/share/doc/girouette/", "644"],
     ["LICENSE-MIT", "usr/share/doc/girouette/", "644"],
-    ["target/release/build/girouette-*/out/girouette.bash", "usr/share/bash-completion/completions/girouette", "644"],
-    ["target/release/build/girouette-*/out/girouette.fish", "usr/share/fish/vendor_completions.d/", "644"],
-    ["target/release/build/girouette-*/out/_girouette", "usr/share/zsh/site-functions/", "644"],
+    ["target/x86_64-unknown-linux-musl/release/build/girouette-*/out/girouette.bash", "usr/share/bash-completion/completions/girouette", "644"],
+    ["target/x86_64-unknown-linux-musl/release/build/girouette-*/out/girouette.fish", "usr/share/fish/vendor_completions.d/", "644"],
+    ["target/x86_64-unknown-linux-musl/release/build/girouette-*/out/_girouette", "usr/share/zsh/site-functions/", "644"],
     ["girouette.1.gz", "usr/share/man/man1/girouette.1.gz", "644"]
 ]
 extended-description = """\
