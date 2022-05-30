@@ -10,7 +10,7 @@ use std::{borrow::Cow, fmt::Display, path::Path, time::Duration};
 
 use crate::config::DisplayConfig;
 use anyhow::{bail, Context, Result};
-use api::{current::ApiResponse as CResponse, one_call::ApiResponse as OResponse, Response};
+use api::{current::ApiResponse as CResponse, one_call::ApiResponse as OResponse, pollution::ApiResponse as PResponse, Response};
 use directories_next::ProjectDirs;
 use log::*;
 use reqwest::StatusCode;
@@ -416,7 +416,27 @@ impl WeatherClient {
                     }
                 }
             }
-            QueryKind::Pollution => todo!(),
+            QueryKind::Pollution => {
+                let resp: PResponse = serde_json::from_slice(&bytes)?;
+                match resp {
+                    PResponse::Success(p) => {
+                        if self.cache_length.is_some() {
+                            if let Err(e) =
+                                self.write_cache(kind, location, language, units, &bytes)
+                            {
+                                warn!("error while writing cached response: {}", e);
+                            }
+                        }
+                        Ok(Response::from_pollution(p))
+                    }
+                    PResponse::OtherInt { cod, message } => {
+                        handle_error(StatusCode::from_u16(cod)?, &message, location)
+                    }
+                    PResponse::OtherString { cod, message } => {
+                        handle_error(cod.parse()?, &message, location)
+                    }
+                }
+            },
         }
     }
 }
@@ -446,7 +466,15 @@ fn parse_cached_response(
                 None
             }
         }
-        QueryKind::Pollution => todo!(),
+        QueryKind::Pollution => {
+            if let PResponse::Success(resp) = serde_json::from_reader(f)? {
+                info!("using cached response for {}", location);
+
+                Some(Response::from_pollution(resp))
+            } else {
+                None
+            }
+        },
     })
 }
 

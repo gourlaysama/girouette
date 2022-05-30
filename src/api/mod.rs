@@ -2,6 +2,7 @@ use anyhow::*;
 
 pub mod current;
 pub mod one_call;
+pub mod pollution;
 
 #[derive(serde::Deserialize, Debug)]
 pub struct Weather {
@@ -27,10 +28,17 @@ pub struct Snow {
     pub three_h: Option<f32>,
 }
 
+#[derive(serde::Deserialize, Debug)]
+pub struct Coord {
+    pub lat: f64,
+    pub lon: f64,
+}
+
 #[derive(Debug)]
 pub struct Response {
     current: Option<current::CurrentResponse>,
     forecast: Option<one_call::OneCallResponse>,
+    pollution: Option<pollution::PollutionResponse>,
 }
 
 impl Response {
@@ -38,6 +46,7 @@ impl Response {
         Self {
             current: Some(current),
             forecast: None,
+            pollution: None
         }
     }
 
@@ -45,6 +54,15 @@ impl Response {
         Self {
             current: None,
             forecast: Some(forecast),
+            pollution: None,
+        }
+    }
+
+    pub fn from_pollution(pollution: pollution::PollutionResponse) -> Self {
+        Self {
+            current: None,
+            forecast: None,
+            pollution: Some(pollution),
         }
     }
 
@@ -52,6 +70,7 @@ impl Response {
         Self {
             current: None,
             forecast: None,
+            pollution: None
         }
     }
 
@@ -61,6 +80,9 @@ impl Response {
         }
         if let Some(f) = other.forecast {
             self.forecast = Some(f);
+        }
+        if let Some(f) = other.pollution {
+            self.pollution = Some(f);
         }
     }
 
@@ -74,5 +96,11 @@ impl Response {
         self.forecast
             .as_ref()
             .ok_or_else(|| anyhow!("internal error: missing forecast api data"))
+    }
+
+    pub fn as_pollution(&self) -> Result<&pollution::PollutionResponse> {
+        self.pollution
+            .as_ref()
+            .ok_or_else(|| anyhow!("internal error: missing pollution api data"))
     }
 }
