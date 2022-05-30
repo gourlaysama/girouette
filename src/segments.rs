@@ -99,23 +99,33 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn display_kind(&self) -> Result<QueryKind> {
+    pub fn display_kinds(&self) -> Result<Vec<QueryKind>> {
         let mut current = false;
         let mut forecast = false;
+        let mut pollution = false;
         for s in &self.display_config.segments {
             if s.is_forecast() {
                 forecast = true;
+            } else if s.is_pollution() {
+                pollution = true;
             } else {
                 current = true;
             }
         }
 
-        match (current, forecast) {
-            (true, true) => Ok(QueryKind::Both),
-            (true, false) => Ok(QueryKind::Current),
-            (false, true) => Ok(QueryKind::ForeCast),
-            (false, false) => bail!("there is no weather info to display"),
+        let mut kinds = Vec::new();
+
+        if current {
+            kinds.push(QueryKind::Current)
         }
+        if forecast {
+            kinds.push(QueryKind::ForeCast)
+        }
+        if pollution {
+            kinds.push(QueryKind::Pollution)
+        }
+
+        Ok(kinds)
     }
 }
 
@@ -170,6 +180,10 @@ impl Segment {
             self,
             Segment::DailyForecast(_) | Segment::HourlyForecast(_) | Segment::Alerts(_)
         )
+    }
+
+    pub fn is_pollution(&self) -> bool {
+        false
     }
 }
 
