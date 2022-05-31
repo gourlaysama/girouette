@@ -211,6 +211,7 @@ pub(crate) mod segment_vec {
                             "hourly_forecast" => Segment::HourlyForecast(HourlyForecast::default()),
                             "alerts" => Segment::Alerts(Alerts::default()),
                             "daytime" => Segment::DayTime(DayTime::default()),
+                            "pollution" => Segment::Pollution(Pollution::default()),
                             a => {
                                 return Err(de::Error::unknown_variant(
                                     a,
@@ -228,6 +229,7 @@ pub(crate) mod segment_vec {
                                         "hourly_forecast",
                                         "alerts",
                                         "daytime",
+                                        "pollution",
                                     ],
                                 ))
                             }
