@@ -31,7 +31,3 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: audit
-          # we do not use the codepaths that triggers this in chrono
-          # TODO: remove when chrono gets updated
-          args: --ignore RUSTSEC-2020-0159
-
