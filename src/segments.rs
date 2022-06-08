@@ -99,23 +99,33 @@ impl Renderer {
         Ok(())
     }
 
-    pub fn display_kind(&self) -> Result<QueryKind> {
+    pub fn display_kinds(&self) -> Result<Vec<QueryKind>> {
         let mut current = false;
         let mut forecast = false;
+        let mut pollution = false;
         for s in &self.display_config.segments {
             if s.is_forecast() {
                 forecast = true;
+            } else if s.is_pollution() {
+                pollution = true;
             } else {
                 current = true;
             }
         }
 
-        match (current, forecast) {
-            (true, true) => Ok(QueryKind::Both),
-            (true, false) => Ok(QueryKind::Current),
-            (false, true) => Ok(QueryKind::ForeCast),
-            (false, false) => bail!("there is no weather info to display"),
+        let mut kinds = Vec::new();
+
+        if current {
+            kinds.push(QueryKind::Current)
         }
+        if forecast {
+            kinds.push(QueryKind::ForeCast)
+        }
+        if pollution {
+            kinds.push(QueryKind::Pollution)
+        }
+
+        Ok(kinds)
     }
 }
 
@@ -137,6 +147,7 @@ pub enum Segment {
     HourlyForecast(HourlyForecast),
     Alerts(Alerts),
     DayTime(DayTime),
+    Pollution(Pollution),
 }
 
 impl Segment {
@@ -162,6 +173,7 @@ impl Segment {
             Segment::HourlyForecast(c) => c.render(out, conf, resp),
             Segment::Alerts(c) => c.render(out, conf, resp),
             Segment::DayTime(c) => c.render(out, conf, resp),
+            Segment::Pollution(p) => p.render(out, conf, resp),
         }
     }
 
@@ -170,6 +182,10 @@ impl Segment {
             self,
             Segment::DailyForecast(_) | Segment::HourlyForecast(_) | Segment::Alerts(_)
         )
+    }
+
+    pub fn is_pollution(&self) -> bool {
+        matches!(self, Segment::Pollution(_))
     }
 }
 
@@ -1154,6 +1170,83 @@ impl DayTime {
         );
         let sunset_date = FixedOffset::east(timezone).timestamp(sunset, 0);
         write!(out, "{}", sunset_date.format("%R"))?;
+
+        Ok(RenderStatus::Rendered)
+    }
+}
+
+const POLLUTION_COLORS: [u8; 5] = [46, 226, 214, 202, 9];
+
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct Pollution {
+    pub display_mode: Option<DisplayMode>,
+    #[serde(with = "option_color_spec")]
+    pub style: Option<ColorSpec>,
+}
+
+impl Pollution {
+    fn render(
+        &self,
+        out: &mut StandardStream,
+        conf: &RenderConf,
+        resp: &Response,
+    ) -> Result<RenderStatus> {
+        let resp = resp.as_pollution()?;
+
+        if let Some(p) = resp.list.get(0) {
+            let aqi = p.main.aqi.max(1).min(5);
+
+            match conf.display_mode {
+                DisplayMode::NerdFonts => {
+                    let icon = match aqi {
+                        1 => "\u{f8a3}",
+                        2 => "\u{f8a6}",
+                        3 => "\u{f8a9}",
+                        4 => "\u{f8ac}",
+                        _ => "\u{f8af}",
+                    };
+                    write!(out, "\u{e35d} ")?;
+                    out.set_color(
+                        conf.base_style
+                            .clone()
+                            .set_fg(Some(Color::Ansi256(POLLUTION_COLORS[(aqi - 1) as usize])))
+                            .set_bold(true),
+                    )?;
+                    if aqi > 3 {
+                        write!(out, "\u{f071} {}", icon)?;
+                    } else {
+                        write!(out, "{}", icon)?;
+                    }
+                }
+                DisplayMode::Unicode => {
+                    write!(out, "P_idx ")?;
+                    out.set_color(
+                        conf.base_style
+                            .clone()
+                            .set_fg(Some(Color::Ansi256(POLLUTION_COLORS[(aqi - 1) as usize])))
+                            .set_bold(true),
+                    )?;
+                    if aqi > 3 {
+                        write!(out, "\u{26a0}\u{fe0f} {}", aqi)?
+                    } else {
+                        write!(out, "{}", aqi)?
+                    }
+                }
+                DisplayMode::Ascii => {
+                    write!(out, "P_idx")?;
+                    out.set_color(
+                        conf.base_style
+                            .clone()
+                            .set_fg(Some(Color::Ansi256(POLLUTION_COLORS[(aqi - 1) as usize])))
+                            .set_bold(true),
+                    )?;
+                    write!(out, "{}", aqi)?
+                }
+            }
+
+            out.set_color(conf.base_style)?;
+        }
 
         Ok(RenderStatus::Rendered)
     }

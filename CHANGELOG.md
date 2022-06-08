@@ -5,6 +5,10 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Features
+
+* New `pollution` segment to display the current Air Quality Index as provided by OpenWeather. The index ranges from 1 (Good) to 5 (Very Poor).
+
 ### Packaging
 
 * There is now a x86_64 debian package available for download on the release page.

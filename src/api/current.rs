@@ -27,12 +27,6 @@ pub struct CurrentResponse {
 }
 
 #[derive(serde::Deserialize, Debug)]
-pub struct Coord {
-    pub lat: f64,
-    pub lon: f64,
-}
-
-#[derive(serde::Deserialize, Debug)]
 pub struct Main {
     pub temp: f32,
     pub feels_like: f32,

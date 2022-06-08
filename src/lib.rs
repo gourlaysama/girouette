@@ -10,7 +10,7 @@ use std::{borrow::Cow, fmt::Display, path::Path, time::Duration};
 
 use crate::config::DisplayConfig;
 use anyhow::{bail, Context, Result};
-use api::{current::ApiResponse as CResponse, one_call::ApiResponse as OResponse, Response};
+use api::{current::ApiResponse as CResponse, one_call::ApiResponse as OResponse, pollution::ApiResponse as PResponse, Response};
 use directories_next::ProjectDirs;
 use log::*;
 use reqwest::StatusCode;
@@ -21,6 +21,7 @@ use tokio::time::timeout;
 
 const CURRENT_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
 const ONECALL_API_URL: &str = "https://api.openweathermap.org/data/2.5/onecall";
+const POLLUTION_API_URL: &str = "http://api.openweathermap.org/data/2.5/air_pollution";
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(from = "String", into = "String")]
@@ -107,10 +108,10 @@ impl Girouette {
     ) -> Result<()> {
         let mut renderer = Renderer::from(&self.config);
 
-        let kind = renderer.display_kind()?;
+        let kinds = renderer.display_kinds()?;
 
         let mut response = Response::empty();
-        if kind != QueryKind::ForeCast {
+        if kinds.contains(&QueryKind::Current) || (matches!(loc, Location::Place(_))) {
             let res = WeatherClient::new(self.cache_length, self.timeout)
                 .query(
                     QueryKind::Current,
@@ -130,10 +131,14 @@ impl Girouette {
             loc.clone()
         };
 
-        if kind != QueryKind::Current {
+        for kind in kinds {
+            if kind == QueryKind::Current {
+                continue;
+            }
+
             let res = WeatherClient::new(self.cache_length, self.timeout)
                 .query(
-                    QueryKind::ForeCast,
+                    kind,
                     &new_loc,
                     self.key.clone(),
                     self.language.as_deref(),
@@ -191,7 +196,7 @@ impl WeatherClient {
             let prefix = match kind {
                 QueryKind::Current => "api",
                 QueryKind::ForeCast => "oapi",
-                QueryKind::Both => bail!("internal error: find_cache_for(Both)"),
+                QueryKind::Pollution => "papi",
             };
 
             let prefix2 = match units {
@@ -251,7 +256,10 @@ impl WeatherClient {
             if path.exists() {
                 return parse_cached_response(path.as_path(), kind, location);
             } else {
-                bail!("failed to find a cached response for '{}', but running offline", location);
+                bail!(
+                    "failed to find a cached response for '{}', but running offline",
+                    location
+                );
             }
         } else if let Some(cache_length) = self.cache_length {
             let path = self.find_cache_for(kind, location, language, units)?;
@@ -322,7 +330,7 @@ impl WeatherClient {
         language: Option<&str>,
         units: UnitMode,
     ) -> Result<Response> {
-        debug!("querying {:?} with '{:?}' OpenWeather API", location, kind);
+        debug!("querying {:?} with {:?} OpenWeather API", location, kind);
         let mut params = Vec::with_capacity(3);
         match location {
             Location::LatLon(lat, lon) => {
@@ -343,7 +351,7 @@ impl WeatherClient {
         let api_url = match kind {
             QueryKind::Current => CURRENT_API_URL,
             QueryKind::ForeCast => ONECALL_API_URL,
-            QueryKind::Both => bail!("internal error: query_api(Both)"),
+            QueryKind::Pollution => POLLUTION_API_URL,
         };
 
         let request = self.client.get(api_url).query(&params).send();
@@ -408,7 +416,27 @@ impl WeatherClient {
                     }
                 }
             }
-            QueryKind::Both => bail!("internal error: query_api(Both)"),
+            QueryKind::Pollution => {
+                let resp: PResponse = serde_json::from_slice(&bytes)?;
+                match resp {
+                    PResponse::Success(p) => {
+                        if self.cache_length.is_some() {
+                            if let Err(e) =
+                                self.write_cache(kind, location, language, units, &bytes)
+                            {
+                                warn!("error while writing cached response: {}", e);
+                            }
+                        }
+                        Ok(Response::from_pollution(p))
+                    }
+                    PResponse::OtherInt { cod, message } => {
+                        handle_error(StatusCode::from_u16(cod)?, &message, location)
+                    }
+                    PResponse::OtherString { cod, message } => {
+                        handle_error(cod.parse()?, &message, location)
+                    }
+                }
+            },
         }
     }
 }
@@ -438,7 +466,15 @@ fn parse_cached_response(
                 None
             }
         }
-        QueryKind::Both => bail!("internal error: query_cache(Both)"),
+        QueryKind::Pollution => {
+            if let PResponse::Success(resp) = serde_json::from_reader(f)? {
+                info!("using cached response for {}", location);
+
+                Some(Response::from_pollution(resp))
+            } else {
+                None
+            }
+        },
     })
 }
 
@@ -462,7 +498,7 @@ pub enum DisplayMode {
 pub enum QueryKind {
     Current,
     ForeCast,
-    Both,
+    Pollution,
 }
 
 #[derive(Clone, Copy, Debug, serde::Deserialize, serde::Serialize)]
