@@ -1,4 +1,4 @@
-% GIROUETTE(1) Version 0.7.2 | Girouette Usage Documentation
+% GIROUETTE(1) Version 0.7.3 | Girouette Usage Documentation
 
 NAME
 ====

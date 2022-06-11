@@ -5,6 +5,8 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+## [0.7.3] - 2022-06-11
+
 ### Features
 
 * New `pollution` segment to display the current Air Quality Index as provided by OpenWeather. The index ranges from 1 (Good) to 5 (Very Poor).
@@ -259,7 +261,8 @@
 * Requires the `-l/--location` option to choose the location (text or `lat,lon`)
 
 <!-- next-url -->
-[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/gourlaysama/girouette/compare/v0.7.3...HEAD
+[0.7.3]: https://github.com/gourlaysama/girouette/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/gourlaysama/girouette/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/gourlaysama/girouette/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/gourlaysama/girouette/compare/v0.6.7...v0.7.0
