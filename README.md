@@ -264,6 +264,7 @@ See the default configuration file [config.yml](config.yml) and browse the [exam
     * `description` (boolean): if yes, show the alert's full description.
     * `sender` (boolean): if yes, show the name of the organization sending the alert.
   * `daytime`: the sunrise and sunset times for the current day.
+  * `pollution`: the current Air Quality Index. The index ranges from 1 (Good) to 5 (Very Poor).
 
 A style attribute is an object with 6 attributes, all optional:
 
