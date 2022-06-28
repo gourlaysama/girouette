@@ -27,6 +27,7 @@ jobs:
           name: girouette ${{ env.G_VERSION }}
           draft: true
           body_path: GH_RELEASE.md
+          token: ${{ secrets.GSAMA_RELEASE_CREATION }}
   tarball:
     name: Build tarball
     needs: init
