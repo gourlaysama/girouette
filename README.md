@@ -56,7 +56,7 @@ Build the latest release (0.7.3) from source with:
 $ git clone https://github.com/gourlaysama/girouette -b v0.7.3
 $ cd girouette
 $ cargo build --release
-$ ./target/release/girouette --version
+$ ./target/release/girouette -V
 girouette 0.7.3
 ```
 
