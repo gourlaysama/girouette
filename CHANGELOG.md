@@ -5,6 +5,10 @@
 <!-- next-header -->
 ## [Unreleased] - TBD
 
+### Packaging
+
+* Fix packaging of shell completions in the debian package.
+
 ## [0.7.3] - 2022-06-11
 
 ### Features

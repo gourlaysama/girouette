@@ -105,8 +105,12 @@ jobs:
         with:
           command: build
           args: --verbose --release --no-default-features --features default-static --target x86_64-unknown-linux-musl
-      - name: Generate man page
+      - name: Generate man page and completions
         run: |
+          mkdir -p complete
+          cp -p target/x86_64-unknown-linux-musl/release/build/girouette-*/out/girouette.bash "complete"
+          cp -p target/x86_64-unknown-linux-musl/release/build/girouette-*/out/girouette.fish "complete"
+          cp -p target/x86_64-unknown-linux-musl/release/build/girouette-*/out/_girouette "complete"
           pandoc -s --to man doc/girouette.1.md -o "girouette.1"
           gzip girouette.1
       - uses: actions-rs/cargo@v1
