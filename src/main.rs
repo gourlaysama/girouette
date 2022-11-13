@@ -168,7 +168,7 @@ fn make_config(options: &ProgramOptions) -> Result<ProgramConfig> {
         }
     };
     if empty {
-        warn!("no config file found, using fallback");
+        warn!("no config file found, using fallback (`-q` to silence warning)");
         // fallback config so that first users see something
         conf = conf.add_source(config::File::from_str(
             DEFAULT_CONFIG,
