@@ -494,7 +494,7 @@ pub enum DisplayMode {
     Ascii,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum QueryKind {
     Current,
     ForeCast,

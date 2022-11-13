@@ -40,7 +40,7 @@ fn main() -> Result<(), Error> {
 
 fn get_commit_hash() -> Option<String> {
     Command::new("git")
-        .args(&["rev-parse", "--short", "HEAD"])
+        .args(["rev-parse", "--short", "HEAD"])
         .output()
         .ok()
         .and_then(|r| {

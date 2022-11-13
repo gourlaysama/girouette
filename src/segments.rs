@@ -1262,7 +1262,7 @@ fn display_temp(
     match color_scale {
         ScaledColor::Scaled => {
             let c = match units {
-                UnitMode::Standard => (temp - 273.15),
+                UnitMode::Standard => temp - 273.15,
                 UnitMode::Metric => temp,
                 UnitMode::Imperial => (temp - 32f32) * 0.555_555_6,
             };
